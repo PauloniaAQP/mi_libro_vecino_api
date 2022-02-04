@@ -1,0 +1,8 @@
+{
+    "name": "service",
+    "fields": {
+        "id": "Key",
+        "text": "String",
+        "created": "Timestamp"
+    }
+}

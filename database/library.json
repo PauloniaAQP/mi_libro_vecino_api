@@ -1,0 +1,62 @@
+{
+    "name": "library",
+    "fields": {
+        "id": "Key",
+        "owner": {
+            "type": "String",
+            "description": "User id of the owner of this library"
+        },
+        "name": "String",
+        "website": "String",
+        "description": "String",
+        "openingHour": {
+            "type": "Timestamp",
+            "description": "Only is needed the time part of the timestamp"
+        },
+        "closingHour": {
+            "type": "Timestamp",
+            "description": "Only is needed the time part of the timestamp"
+        },
+        "type": {
+            "type": "Enum",
+            "of": "mediator, library, editorial, bookshop",
+            "description": "In Spanish the part: '¿Cómo te identificas?: Mediador, Biblioteca, Editorial, Libreria'"
+        },
+        "address": {
+            "type": "String",
+            "description": "The fisical location in string"
+        },
+        "location": {
+            "type": "Geocoder",
+            "description": "Latitude, logitude & geohash of this library"
+        },
+        "services": {
+            "type": "List",
+            "of": "String",
+            "description": "List of ids of the servicios of this library"
+        },
+        "tags": {
+            "type": "List",
+            "of": "String",
+            "description": "List of tags"
+        },
+        "photoVersion": {
+            "type": "Number",
+            "description": "Version of the profile photo of the user"
+        },
+        "state": {
+            "type": "Enum",
+            "of": "inReview, accepted",
+            "description": "If the library is rejected or deleted, then the owner and the library are deleted"
+        },
+        "searchKeys": {
+            "type": "List",
+            "of": "String",
+            "description": "Splited tokens for search of: name"
+        },
+        "created": "Timestamp"
+    },
+    "storage": {
+        "profileImage": "/libraries/<libraryId>/profile_<version>.jpg"
+    }
+}

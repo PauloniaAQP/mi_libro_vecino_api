@@ -1,0 +1,2 @@
+El admin no tiene modelo user, cuando el admin se loguea hay que verificar sus clamis y ver si tiene el isAdmin.
+Hay que crear un script para crear un admin y agregar el claim isAdmin

@@ -1,0 +1,20 @@
+{
+    "name": "user",
+    "fields": {
+        "id": "Key",
+        "email": "String",
+        "name": {
+            "type": "String",
+            "description": "Name and surname of the user"
+        },
+        "phone": "String",
+        "photoVersion": {
+            "type": "Number",
+            "description": "Version of the profile photo of the user"
+        },
+        "created": "Timestamp"
+    },
+    "storage": {
+        "profileImage": "/users/<userId>/profile_<version>.jpg"
+    }
+}

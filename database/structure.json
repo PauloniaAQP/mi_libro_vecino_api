@@ -1,0 +1,14 @@
+{
+    "repositories": [
+        {
+            "UserRepository": {
+                "functions": [
+                    "create user",
+                    "delete user",
+                    "get user from id",
+                    
+                ]
+            }
+        }
+    ]
+}

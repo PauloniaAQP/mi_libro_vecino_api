@@ -1,5 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:mi_libro_vecino_api/utils/constants/enums/UserEnums.dart';
+import 'package:mi_libro_vecino_api/utils/constants/enums/user_enums.dart';
 import 'package:paulonia_error_service/paulonia_error_service.dart';
 
 class AuthService {
@@ -67,28 +67,28 @@ class AuthService {
   static LoginState _handlerLoginError(dynamic error) {
     signOut();
     if (error.runtimeType == NoSuchMethodError || error.code == null) {
-      return LoginState.CANCELED_BY_THE_USER;
+      return LoginState.canceledByTheUser;
     }
     switch (error.code) {
-      case LoginErrorStrings.ERROR_ACCOUNT_EXISTS_WITH_DIFFERENT_CREDENTIAL:
-        return LoginState.ERROR_ACCOUNT_EXISTS_WITH_DIFFERENT_CREDENTIAL;
-      case LoginErrorStrings.ERROR_EMAIL_ALREADY_IN_USE:
-        return LoginState.ERROR_EMAIL_ALREADY_IN_USE;
-      case LoginErrorStrings.ERROR_NETWORK_REQUEST_FAILED:
-        return LoginState.ERROR_NETWORK_REQUEST_FAILED;
-      case LoginErrorStrings.ERROR_WEAK_PASSWORD:
-        return LoginState.ERROR_WEAK_PASSWORD;
-      case LoginErrorStrings.ERROR_INVALID_EMAIL:
-        return LoginState.ERROR_INVALID_EMAIL;
-      case LoginErrorStrings.ERROR_USER_NOT_FOUND:
-        return LoginState.ERROR_USER_NOT_FOUND;
-      case LoginErrorStrings.ERROR_WRONG_PASSWORD:
-        return LoginState.ERROR_WRONG_PASSWORD;
-      case LoginErrorStrings.ERROR_TOO_MANY_REQUESTS:
-        return LoginState.ERROR_TOO_MANY_REQUESTS;
+      case LoginErrorStrings.errorAccountExistsWithDifferentCredential:
+        return LoginState.errorAccountExistsWithDifferentCredential;
+      case LoginErrorStrings.errorEmailAlreadyInUse:
+        return LoginState.errorEmailAlreadyInUse;
+      case LoginErrorStrings.errorNetworkRequestFailed:
+        return LoginState.errorNetworkRequestFailed;
+      case LoginErrorStrings.errorWeekPassword:
+        return LoginState.errorWeekPassword;
+      case LoginErrorStrings.errorInvalidEmail:
+        return LoginState.errorInvalidEmail;
+      case LoginErrorStrings.errorUserNotFound:
+        return LoginState.errorUserNotFound;
+      case LoginErrorStrings.errorWrongPassword:
+        return LoginState.errorWrongPassword;
+      case LoginErrorStrings.errorTooManyRequests:
+        return LoginState.errorTooManyRequests;
       default:
         PauloniaErrorService.sendErrorWithoutStacktrace(error);
-        return LoginState.UNKNOWN_ERROR;
+        return LoginState.unknownError;
     }
   }
 

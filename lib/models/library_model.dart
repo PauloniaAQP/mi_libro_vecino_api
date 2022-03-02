@@ -4,6 +4,7 @@ import 'package:mi_libro_vecino_api/repositories/user_repository.dart';
 import 'package:mi_libro_vecino_api/utils/constants/enums/library_enums.dart';
 import 'package:mi_libro_vecino_api/utils/utils.dart';
 import 'package:paulonia_repository/PauloniaModel.dart';
+import 'package:get/get.dart';
 
 class LibraryModel extends PauloniaModel<String> {
   String ownerId;
@@ -19,10 +20,11 @@ class LibraryModel extends PauloniaModel<String> {
   int photoVersion;
   LibraryState state;
   List<String> searchKeys;
-  String? departmentId;
-  String? provinceId;
-  String? districtId;
+  String departmentId;
+  String provinceId;
+  String districtId;
   String gsUrl;
+  String description;
 
   @override
   DateTime created;
@@ -50,12 +52,12 @@ class LibraryModel extends PauloniaModel<String> {
     required this.provinceId,
     required this.districtId,
     required this.gsUrl,
+    required this.description,
   });
 
   Future<UserModel?> getOwner() async {
-    UserRepository userRepository = UserRepository();
+    UserRepository userRepository = Get.find<UserRepository>();
     UserModel? owner = await userRepository.getFromId(ownerId);
-    userRepository.addInRepository([owner!]);
     return owner;
   }
 

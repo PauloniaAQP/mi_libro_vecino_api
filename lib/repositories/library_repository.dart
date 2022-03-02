@@ -62,17 +62,17 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
       photoVersion: photoVersion,
       state: state,
       searchKeys: searchKeys,
-      departmentId: docSnap.data()?[LibraryCollectionNames.DEPARTMENT_ID],
-      provinceId: docSnap.data()?[LibraryCollectionNames.PROVINCE_ID],
-      districtId: docSnap.data()?[LibraryCollectionNames.DISTRICT_ID],
-      website: docSnap.data()?[LibraryCollectionNames.WEBSITE],
+      departmentId: docSnap.get(LibraryCollectionNames.DEPARTMENT_ID),
+      provinceId: docSnap.get(LibraryCollectionNames.PROVINCE_ID),
+      districtId: docSnap.get(LibraryCollectionNames.DISTRICT_ID),
+      website: docSnap.get(LibraryCollectionNames.WEBSITE),
       gsUrl: _getBigGsUrl(docSnap.id, photoVersion),
+      description: docSnap.get(LibraryCollectionNames.DESCRIPTION),
     );
   }
 
   /// Create a library and returns its
   Future<LibraryModel?> createLibrary({
-    required String id,
     required String userId,
     required String name,
     required LibraryType type,
@@ -84,17 +84,21 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     required List<String>? tags,
     PickedFile? photo,
     List<String>? searchKeys,
-    String? departmentId,
-    String? provinceId,
-    String? districtId,
+    required String departmentId,
+    required String provinceId,
+    required String districtId,
     String? website,
+    required String description,
   }) async {
     int photoVersion = -1;
+    DocumentReference docRef = _collectionReference.doc();
     if (photo != null) {
       photoVersion++;
 
       /// TODO: It must be tested
-      await ApiUtils.uploadFile(id, photoVersion, photo, _storageReference);
+      bool response = await ApiUtils.uploadFile(
+          docRef.id, photoVersion, photo, _storageReference);
+      if (!response) photoVersion--;
     }
     Map<String, dynamic> data = _getLibraryMap(
       userId: userId,
@@ -113,11 +117,12 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
       districtId: districtId,
       website: website,
       state: LibraryState.inReview,
+      description: description,
     );
     data[LibraryCollectionNames.CREATED] = FieldValue.serverTimestamp();
-    await _collectionReference.doc(id).set(data);
+    await docRef.set(data);
     DocumentSnapshot? docSnap = await PauloniaDocumentService.getDoc(
-        _collectionReference.doc(id), false);
+        _collectionReference.doc(docRef.id), false);
     if (docSnap == null) return null;
     LibraryModel library = getFromDocSnap(docSnap);
     addInRepository([library]);
@@ -125,9 +130,8 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
   }
 
   /// Create a library in batch and returns it
-  WriteBatch createLibraryInBatch({
+  Future<WriteBatch> createLibraryInBatch({
     required WriteBatch batch,
-    required String id,
     required String ownerId,
     required String name,
     required LibraryType type,
@@ -139,17 +143,21 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     required List<String>? tags,
     PickedFile? photo,
     List<String>? searchKeys,
-    String? departmentId,
-    String? provinceId,
-    String? districtId,
+    required String departmentId,
+    required String provinceId,
+    required String districtId,
     String? website,
-  }) {
+    required String description,
+  }) async {
+    DocumentReference docRef = _collectionReference.doc();
     int photoVersion = -1;
     if (photo != null) {
       photoVersion++;
 
       /// TODO: It should be tested
-      ApiUtils.uploadFile(id, photoVersion, photo, _storageReference);
+      bool response = await ApiUtils.uploadFile(
+          docRef.id, photoVersion, photo, _storageReference);
+      if (!response) photoVersion--;
     }
     Map<String, dynamic> data = _getLibraryMap(
       userId: ownerId,
@@ -168,28 +176,31 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
       districtId: districtId,
       website: website,
       state: LibraryState.inReview,
+      description: description,
     );
     data[LibraryCollectionNames.CREATED] = FieldValue.serverTimestamp();
-    batch.set(_collectionReference.doc(id), data);
+    batch.set(docRef, data);
     LibraryModel library = LibraryModel(
-        id: id,
-        created: data[LibraryCollectionNames.CREATED].toDate(),
-        ownerId: ownerId,
-        name: name,
-        openingHour: openingHour,
-        closingHour: closingHour,
-        type: type,
-        address: address,
-        location: location,
-        services: services,
-        tags: tags ?? [],
-        photoVersion: photoVersion,
-        state: LibraryState.inReview,
-        searchKeys: searchKeys ?? [],
-        departmentId: departmentId,
-        provinceId: provinceId,
-        districtId: districtId,
-        gsUrl: _getBigGsUrl(id, photoVersion));
+      id: docRef.id,
+      created: data[LibraryCollectionNames.CREATED].toDate(),
+      ownerId: ownerId,
+      name: name,
+      openingHour: openingHour,
+      closingHour: closingHour,
+      type: type,
+      address: address,
+      location: location,
+      services: services,
+      tags: tags ?? [],
+      photoVersion: photoVersion,
+      state: LibraryState.inReview,
+      searchKeys: searchKeys ?? [],
+      departmentId: departmentId,
+      provinceId: provinceId,
+      districtId: districtId,
+      gsUrl: _getBigGsUrl(docRef.id, photoVersion),
+      description: description,
+    );
     addInRepository([library]);
     return batch;
   }
@@ -230,16 +241,17 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     String? provinceId,
     String? districtId,
     String? website,
+    String? description,
   }) async {
     Map<String, dynamic> data = {};
-    int photoVersion = library.photoVersion;
     if (photo != null) {
-      photoVersion++;
-      await ApiUtils.uploadFile(
-          library.id, photoVersion, photo, _storageReference);
-      library.photoVersion = photoVersion;
-      library.gsUrl = _getBigGsUrl(library.id, photoVersion);
-      data[LibraryCollectionNames.PHOTO_VERSION] = photoVersion;
+      bool response = await ApiUtils.uploadFile(
+          library.id, library.photoVersion, photo, _storageReference);
+      if (response) {
+        library.photoVersion++;
+        library.gsUrl = _getBigGsUrl(library.id, library.photoVersion);
+        data[LibraryCollectionNames.PHOTO_VERSION] = library.photoVersion;
+      }
     }
     if (ownerId != null) {
       library.ownerId = ownerId;
@@ -299,6 +311,10 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
       library.website = website;
       data[LibraryCollectionNames.WEBSITE] = website;
     }
+    if (description != null) {
+      library.description = description;
+      data[LibraryCollectionNames.DESCRIPTION] = description;
+    }
     _collectionReference.doc(library.id).update(data);
     addInRepository([library]);
     return library;
@@ -321,6 +337,7 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     String? districtId,
     String? website,
     LibraryState? state,
+    String? description,
   }) {
     Map<String, dynamic> data = {};
     if (userId != null) data[LibraryCollectionNames.OWNER_ID] = userId;
@@ -356,6 +373,9 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     }
     if (districtId != null) {
       data[LibraryCollectionNames.DISTRICT_ID] = districtId;
+    }
+    if (description != null) {
+      data[LibraryCollectionNames.DESCRIPTION] = description;
     }
     return data;
   }

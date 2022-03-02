@@ -7,7 +7,7 @@ service firebase.storage {
         allow read;
       }
       match /library/{userId}/{image}{
-        allow create, write, update: if request.auth.uid == userId;
+        allow create, write, update: if request.auth.uid != null;
         allow read;
       }
     }

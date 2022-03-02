@@ -1,10 +1,15 @@
+import 'package:mi_libro_vecino_api/api_configuration.dart';
 import 'package:mi_libro_vecino_api/models/user_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mi_libro_vecino_api/utils/constants/firestore/collections/user.dart';
 import 'package:mi_libro_vecino_api/utils/constants/firestore/firestore_constants.dart';
+import 'package:mi_libro_vecino_api/utils/constants/storage/storage_constants.dart';
+import 'package:mi_libro_vecino_api/utils/utils.dart';
 import 'package:paulonia_document_service/paulonia_document_service.dart';
 import 'package:paulonia_repository/PauloniaRepository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class UserRepository extends PauloniaRepository<String, UserModel> {
   @override
@@ -12,6 +17,12 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
 
   final CollectionReference _collectionReference = FirebaseFirestore.instance
       .collection(FirestoreCollections.userCollection);
+
+  final Reference _storageReference = FirebaseStorage.instance
+      .ref()
+      .child(StorageConstants.entity_directory_name)
+      .child(StorageConstants.images_directory_name)
+      .child(StorageConstants.user_directory_name);
 
   /// Get a User model from a document snapshot
   @override
@@ -23,41 +34,46 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
       name: docSnap.get(UserCollectionNames.NAME),
       phone: docSnap.data()?[UserCollectionNames.PHONE],
       email: docSnap.get(UserCollectionNames.EMAIL),
-      created: _fromTimestamp(docSnap.get(UserCollectionNames.CREATED)),
+      created: docSnap.get(UserCollectionNames.CREATED).toDate(),
       firebaseUser: user,
-
-      /// TODO: Add photo url from firebase storage
-      // photoUrl: docSnap.data()?[UserCollectionNames.PHOTO_URL],
+      gsUrl: _getBigGsUrl(docSnap.id, photoVersion),
     );
   }
 
   /// Creates an user in a batch and returns it
   ///
   /// The [userId] is the uid of firebase auth
-  WriteBatch createUserInBatch({
+  WriteBatch createUserInBatch(
+    WriteBatch batch, {
     required String userId,
     required String name,
     required String email,
     String? phone,
-    int? photoVersion,
+    PickedFile? photo,
   }) {
+    int photoVersion = -1;
+    if (photo != null) {
+      photoVersion++;
+
+      /// TODO: It must be tested
+      ApiUtils.uploadFile(userId, photoVersion, photo, _storageReference);
+    }
     Map<String, dynamic> data = _getUserDataMap(
       name: name,
       email: email,
       phone: phone,
-      photoVersion: photoVersion ?? -1,
+      photoVersion: photoVersion,
     );
     data[UserCollectionNames.CREATED] = FieldValue.serverTimestamp();
-    WriteBatch batch = FirebaseFirestore.instance.batch();
     batch.set(_collectionReference.doc(userId), data);
     UserModel user = UserModel(
-      id: userId,
-      name: name,
-      email: email,
-      created: data[UserCollectionNames.CREATED],
-      phone: phone,
-      photoVersion: photoVersion ?? -1,
-    );
+        id: userId,
+        name: name,
+        email: email,
+        created: data[UserCollectionNames.CREATED],
+        phone: phone,
+        photoVersion: photoVersion,
+        gsUrl: _getBigGsUrl(userId, photoVersion));
     addInRepository([user]);
     return batch;
   }
@@ -70,12 +86,20 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
     required String name,
     required String email,
     required String phone,
+    PickedFile? photo,
   }) async {
+    int photoVersion = -1;
+    if (photo != null) {
+      photoVersion++;
+
+      /// TODO: It must be tested
+      await ApiUtils.uploadFile(userId, photoVersion, photo, _storageReference);
+    }
     Map<String, dynamic> data = _getUserDataMap(
       name: name,
       email: email,
       phone: phone,
-      photoVersion: -1,
+      photoVersion: photoVersion,
     );
     data[UserCollectionNames.CREATED] = FieldValue.serverTimestamp();
     await _collectionReference.doc(userId).set(data);
@@ -92,8 +116,16 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
     String? name,
     String? email,
     String? phone,
+    PickedFile? photo,
   }) async {
     Map<String, dynamic> data = {};
+    if (photo != null) {
+      user.photoVersion = user.photoVersion++;
+      await ApiUtils.uploadFile(
+          user.id, user.photoVersion, photo, _storageReference);
+      data[UserCollectionNames.PHOTO_VERSION] = user.photoVersion;
+      user.gsUrl = _getBigGsUrl(user.id, user.photoVersion);
+    }
     if (name != null) {
       user.name = name;
       data[UserCollectionNames.NAME] = name;
@@ -107,16 +139,6 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
       data[UserCollectionNames.PHONE] = phone;
     }
     _collectionReference.doc(user.id).update(data);
-    addInRepository([user]);
-    return user;
-  }
-
-  /// Gets an userModel from a userId
-  Future<UserModel?> getUserById(String userId, {bool cache = true}) async {
-    DocumentSnapshot? userDoc = await PauloniaDocumentService.getDoc(
-        _collectionReference.doc(userId), cache);
-    if (userDoc == null) return null;
-    UserModel user = getFromDocSnap(userDoc);
     addInRepository([user]);
     return user;
   }
@@ -144,5 +166,26 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
     return data;
   }
 
-  DateTime _fromTimestamp(Timestamp timestamp) => timestamp.toDate();
+  /// Gets the gsUrl for the big picture
+  String _getBigGsUrl(String userId, int photoVersion) {
+    if (photoVersion >= 0) {
+      return ApiConfiguration.gsBucketUrl +
+          StorageConstants.images_directory_name +
+          '/' +
+          StorageConstants.user_directory_name +
+          '/' +
+          userId +
+          '/' +
+          StorageConstants.big_prefix +
+          photoVersion.toString() +
+          StorageConstants.jpg_extension;
+    }
+    return ApiConfiguration.gsBucketUrl +
+        StorageConstants.images_directory_name +
+        '/' +
+        StorageConstants.default_directory_name +
+        '/' +
+        StorageConstants.default_user_profile +
+        StorageConstants.jpg_extension;
+  }
 }

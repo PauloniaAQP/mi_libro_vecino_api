@@ -43,20 +43,22 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
   /// Creates an user in a batch and returns it
   ///
   /// The [userId] is the uid of firebase auth
-  WriteBatch createUserInBatch(
+  Future<WriteBatch> createUserInBatch(
     WriteBatch batch, {
     required String userId,
     required String name,
     required String email,
     String? phone,
     PickedFile? photo,
-  }) {
+  }) async {
     int photoVersion = -1;
     if (photo != null) {
       photoVersion++;
 
       /// TODO: It must be tested
-      ApiUtils.uploadFile(userId, photoVersion, photo, _storageReference);
+      bool response = await ApiUtils.uploadFile(
+          userId, photoVersion, photo, _storageReference);
+      if (!response) photoVersion--;
     }
     Map<String, dynamic> data = _getUserDataMap(
       name: name,
@@ -93,7 +95,9 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
       photoVersion++;
 
       /// TODO: It must be tested
-      await ApiUtils.uploadFile(userId, photoVersion, photo, _storageReference);
+      bool response = await ApiUtils.uploadFile(
+          userId, photoVersion, photo, _storageReference);
+      if (!response) photoVersion--;
     }
     Map<String, dynamic> data = _getUserDataMap(
       name: name,
@@ -120,9 +124,10 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
   }) async {
     Map<String, dynamic> data = {};
     if (photo != null) {
-      user.photoVersion = user.photoVersion++;
-      await ApiUtils.uploadFile(
+      user.photoVersion++;
+      bool response = await ApiUtils.uploadFile(
           user.id, user.photoVersion, photo, _storageReference);
+      if (!response) user.photoVersion--;
       data[UserCollectionNames.PHOTO_VERSION] = user.photoVersion;
       user.gsUrl = _getBigGsUrl(user.id, user.photoVersion);
     }

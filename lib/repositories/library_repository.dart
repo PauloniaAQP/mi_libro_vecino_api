@@ -33,9 +33,9 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
         docSnap.data()?[LibraryCollectionNames.PHOTO_VERSION] ?? -1;
     LibraryType type =
         LibraryType.values[docSnap.get(LibraryCollectionNames.TYPE)];
-    TimeOfDay openingHour = ApiUtils.TimeOfDayFromString(
+    TimeOfDay openingHour = ApiUtils.timeOfDayFromString(
         docSnap.get(LibraryCollectionNames.OPENING_HOUR));
-    TimeOfDay closingHour = ApiUtils.TimeOfDayFromString(
+    TimeOfDay closingHour = ApiUtils.timeOfDayFromString(
         docSnap.get(LibraryCollectionNames.CLOSING_HOUR));
     Coordinates location =
         Coordinates.fromGeopoint(docSnap.get(LibraryCollectionNames.LOCATION));
@@ -256,12 +256,12 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     if (openingHour != null) {
       library.openingHour = openingHour;
       data[LibraryCollectionNames.OPENING_HOUR] =
-          ApiUtils.TimeOfDayToString(openingHour);
+          ApiUtils.timeOfDayToString(openingHour);
     }
     if (closingHour != null) {
       library.closingHour = closingHour;
       data[LibraryCollectionNames.CLOSING_HOUR] =
-          ApiUtils.TimeOfDayToString(closingHour);
+          ApiUtils.timeOfDayToString(closingHour);
     }
     if (address != null) {
       library.address = address;
@@ -329,11 +329,11 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     if (state != null) data[LibraryCollectionNames.STATE] = state.index;
     if (openingHour != null) {
       data[LibraryCollectionNames.OPENING_HOUR] =
-          ApiUtils.TimeOfDayToString(openingHour);
+          ApiUtils.timeOfDayToString(openingHour);
     }
     if (closingHour != null) {
       data[LibraryCollectionNames.CLOSING_HOUR] =
-          ApiUtils.TimeOfDayToString(closingHour);
+          ApiUtils.timeOfDayToString(closingHour);
     }
     if (address != null) data[LibraryCollectionNames.ADDRESS] = address;
     if (location != null) {

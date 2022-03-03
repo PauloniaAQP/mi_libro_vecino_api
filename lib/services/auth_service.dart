@@ -27,7 +27,8 @@ class AuthService {
       User? user = (await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
-      )).user;
+      ))
+          .user;
       await user?.updateProfile(
         displayName: name,
       );
@@ -41,12 +42,14 @@ class AuthService {
   }
 
   /// Sign in with email and password
-  static Future<User?> emailPasswordSignIn(String email, String password) async {
+  static Future<User?> emailPasswordSignIn(
+      String email, String password) async {
     try {
       final User? user = (await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
-      )).user;
+      ))
+          .user;
       return user;
     } catch (error) {
       throw (_handlerLoginError(error));
@@ -61,6 +64,11 @@ class AuthService {
   /// Sign Out the session of the user.
   static Future<void> signOut() async {
     _auth.signOut();
+  }
+
+  /// Sign Out the session of the user.
+  static Future<void> removeUser(User user) async {
+    user.delete();
   }
 
   /// Handle all login errors
@@ -91,5 +99,4 @@ class AuthService {
         return LoginState.unknownError;
     }
   }
-
 }

@@ -1,5 +1,5 @@
 class ApiConfiguration {
-  static const String gsBucketUrl = "";
+  static const String gsBucketUrl = "gs://mi-libro-vecino-dev.appspot.com";
   static const String cfEntryPoint = "";
   static const String sentryDSNString = "";
   static const String mapsAPIString = "";

@@ -382,7 +382,7 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
 
   /// Gets the gsUrl for the big picture
   String _getBigGsUrl(String userId, int photoVersion) {
-    if (photoVersion > 0) {
+    if (photoVersion >= 0) {
       return ApiConfiguration.gsBucketUrl +
           StorageConstants.images_directory_name +
           '/' +

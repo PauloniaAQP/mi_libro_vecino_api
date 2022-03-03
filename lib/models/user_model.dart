@@ -6,8 +6,8 @@ class UserModel extends PauloniaModel<String> {
   String id;
   String name;
   String? phone;
-  int? photoVersion;
-  String? photoUrl;
+  int photoVersion;
+  String gsUrl;
   String email;
   User? firebaseUser;
   @override
@@ -18,8 +18,8 @@ class UserModel extends PauloniaModel<String> {
     required this.name,
     required this.email,
     this.phone,
-    this.photoVersion,
-    this.photoUrl,
+    required this.photoVersion,
+    required this.gsUrl,
     required this.created,
     this.firebaseUser,
   });
@@ -31,7 +31,7 @@ class UserModel extends PauloniaModel<String> {
       name: $name,
       phone: $phone,
       photoVersion: $photoVersion,
-      photoUrl: $photoUrl,
+      photoUrl: $gsUrl,
       email: $email,
       firebaseUser: $firebaseUser,
       created: $created}''';

@@ -20,6 +20,8 @@ class AuthService {
 
   /// Sign Up with email an password
   ///
+  /// If [isAdmin] is true, then this verifies if the user has the 'isAdmin' claim,
+  /// otherwise it returns null
   /// It sends an email verification
   static Future<User?> emailPasswordSignUp(
       String email, String password, String name) async {
@@ -27,8 +29,7 @@ class AuthService {
       User? user = (await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
-      ))
-          .user;
+      )).user;
       await user?.updateProfile(
         displayName: name,
       );
@@ -43,13 +44,21 @@ class AuthService {
 
   /// Sign in with email and password
   static Future<User?> emailPasswordSignIn(
-      String email, String password) async {
+      String email, String password, {bool isAdmin = false}) async {
     try {
       final User? user = (await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
-      ))
-          .user;
+      )).user;
+      if (isAdmin) {
+        if (user == null) {
+          return null;
+        }
+        final idTokenResult = await user.getIdTokenResult();
+        if (idTokenResult.claims == null || !idTokenResult.claims!['isAdmin']) {
+          return null;
+        }
+      }
       return user;
     } catch (error) {
       throw (_handlerLoginError(error));

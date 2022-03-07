@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mi_libro_vecino_api/utils/constants/enums/user_enums.dart';
-import 'package:paulonia_error_service/paulonia_error_service.dart';
+// import 'package:paulonia_error_service/paulonia_error_service.dart';
 
 class AuthService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -95,7 +95,7 @@ class AuthService {
       case LoginErrorStrings.errorTooManyRequests:
         return LoginState.errorTooManyRequests;
       default:
-        PauloniaErrorService.sendErrorWithoutStacktrace(error);
+        // PauloniaErrorService.sendErrorWithoutStacktrace(error);
         return LoginState.unknownError;
     }
   }

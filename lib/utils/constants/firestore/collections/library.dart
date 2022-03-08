@@ -17,4 +17,5 @@ class LibraryCollectionNames {
   static const String PROVINCE_ID = 'provinceId';
   static const String DISTRICT_ID = 'districtId';
   static const String DESCRIPTION = 'descrtiption';
+  static const String GEOPOINT = 'geopoint';
 }

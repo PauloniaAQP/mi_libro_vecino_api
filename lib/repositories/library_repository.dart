@@ -13,6 +13,7 @@ import 'package:paulonia_repository/PauloniaRepository.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:collection';
+import 'package:geoflutterfire/geoflutterfire.dart' as geofire;
 
 class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
   @override
@@ -27,9 +28,11 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
       .child(StorageConstants.images_directory_name)
       .child(StorageConstants.library_directory_name);
 
-  HashMap<LibraryState, DocumentSnapshot?> _librariesByState = HashMap();
-  HashMap<UbigeoType, DocumentSnapshot?> _librariesByUbigeoPagination =
+  final HashMap<LibraryState, DocumentSnapshot?> _librariesByState = HashMap();
+  final HashMap<UbigeoType, DocumentSnapshot?> _librariesByUbigeoPagination =
       HashMap();
+
+  final _geoFire = geofire.Geoflutterfire();
 
   /// Gets a [LibraryModel] from a DocumentSnapshot
   /// openHour and closeHour are converted from String to TimeOfDay directly
@@ -43,8 +46,10 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
         docSnap.get(LibraryCollectionNames.OPENING_HOUR));
     TimeOfDay closingHour = ApiUtils.timeOfDayFromString(
         docSnap.get(LibraryCollectionNames.CLOSING_HOUR));
-    Coordinates location =
-        Coordinates.fromGeopoint(docSnap.get(LibraryCollectionNames.LOCATION));
+    Map<String, dynamic> geoflutterfireData =
+        docSnap.get(LibraryCollectionNames.LOCATION);
+    Coordinates location = Coordinates.fromGeopoint(
+        geoflutterfireData[LibraryCollectionNames.GEOPOINT]);
     List<String> services =
         List.from(docSnap.get(LibraryCollectionNames.SERVICES));
     List<String> tags = List.from(docSnap.get(LibraryCollectionNames.TAGS));
@@ -286,7 +291,9 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     }
     if (location != null) {
       library.location = location;
-      data[LibraryCollectionNames.LOCATION] = location.toGeoPoint();
+      geofire.GeoFirePoint fireLocation = _geoFire.point(
+          latitude: location.latitude, longitude: location.longitude);
+      data[LibraryCollectionNames.LOCATION] = fireLocation.data;
     }
     if (services != null) {
       library.services = services;
@@ -359,7 +366,9 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     }
     if (address != null) data[LibraryCollectionNames.ADDRESS] = address;
     if (location != null) {
-      data[LibraryCollectionNames.LOCATION] = location.toGeoPoint();
+      geofire.GeoFirePoint fireLocation = _geoFire.point(
+          latitude: location.latitude, longitude: location.longitude);
+      data[LibraryCollectionNames.LOCATION] = fireLocation.data;
     }
     if (services != null) data[LibraryCollectionNames.SERVICES] = services;
     if (tags != null) data[LibraryCollectionNames.TAGS] = tags;
@@ -482,6 +491,48 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     List<LibraryModel> res = await getFromDocSnapList(queryRes.docs);
     addInRepository(res);
     return res;
+  }
+
+  /// Search libraries by [searchKey]
+  ///
+  /// Set [cache] to true to get the data from cache
+  Future<List<LibraryModel>> searchLibraries(String searchKey,
+      {bool cache = false}) async {
+    List<String> searchKeys = ApiUtils.preprocessWord(searchKey);
+    Query query = _collectionReference
+        .where(LibraryCollectionNames.STATE,
+            isEqualTo: LibraryState.accepted.index)
+        .where(LibraryCollectionNames.SEARCH_KEYS,
+            arrayContainsAny: searchKeys);
+    QuerySnapshot? queryRes =
+        await PauloniaDocumentService.runQuery(query, cache);
+    if (queryRes == null || queryRes.docs.isEmpty) return [];
+    List<LibraryModel> res = await getFromDocSnapList(queryRes.docs);
+    addInRepository(res);
+    return res;
+  }
+
+  /// Get a list of libraries near to [coordinates]
+  ///
+  /// Set [cache] to true to get the data from cache
+  /// Set [radius] to the radius of the search, it's in kilometers
+  Future<List<LibraryModel>> getLibrariesByLocation(Coordinates coordinates,
+      {bool cache = false, double radius = 5}) async {
+    Query query = _collectionReference.where(LibraryCollectionNames.STATE,
+        isEqualTo: LibraryState.inReview.index);
+    geofire.GeoFirePoint center = _geoFire.point(
+        latitude: coordinates.latitude, longitude: coordinates.longitude);
+    Stream<List<DocumentSnapshot>> stream = _geoFire
+        .collection(collectionRef: query)
+        .within(
+            center: center,
+            radius: radius,
+            field: LibraryCollectionNames.LOCATION);
+    List<DocumentSnapshot> docSnapList = await stream.first;
+    if (docSnapList.isEmpty) return [];
+    List<LibraryModel> libraries = await getFromDocSnapList(docSnapList);
+    addInRepository(libraries);
+    return libraries;
   }
 
   /// Gets the gsUrl for the big picture

@@ -433,8 +433,7 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     }
     QuerySnapshot? queryRes =
         await PauloniaDocumentService.runQuery(query, cache);
-    if (queryRes == null) return [];
-    print(queryRes.docs.last.data());
+    if (queryRes == null || queryRes.docs.isEmpty) return [];
     _librariesByState[LibraryState.accepted] = queryRes.docs.last;
     List<LibraryModel> res = await getFromDocSnapList(queryRes.docs);
     addInRepository(res);
@@ -478,7 +477,7 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     }
     QuerySnapshot? queryRes =
         await PauloniaDocumentService.runQuery(query, cache);
-    if (queryRes == null) return [];
+    if (queryRes == null || queryRes.docs.isEmpty) return [];
     _librariesByUbigeoPagination[type] = queryRes.docs.last;
     List<LibraryModel> res = await getFromDocSnapList(queryRes.docs);
     addInRepository(res);

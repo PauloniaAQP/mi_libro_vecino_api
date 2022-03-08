@@ -22,6 +22,7 @@ dev_dependencies:
   paulonia_error_service: 0.3.0
   paulonia_document_service: ^0.2.0
   image_picker: ^0.8.4+10
+  catcher: 0.6.6
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

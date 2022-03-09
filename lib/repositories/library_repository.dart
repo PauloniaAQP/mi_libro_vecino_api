@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:mi_libro_vecino_api/api_configuration.dart';
 import 'package:mi_libro_vecino_api/models/library_model.dart';
 import 'package:mi_libro_vecino_api/utils/constants/enums/library_enums.dart';
+import 'package:mi_libro_vecino_api/utils/constants/enums/ubigeo_enums.dart';
 import 'package:mi_libro_vecino_api/utils/constants/firestore/collections/library.dart';
 import 'package:mi_libro_vecino_api/utils/constants/firestore/firestore_constants.dart';
 import 'package:mi_libro_vecino_api/utils/constants/storage/storage_constants.dart';
@@ -11,6 +12,7 @@ import 'package:paulonia_document_service/paulonia_document_service.dart';
 import 'package:paulonia_repository/PauloniaRepository.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:collection';
 
 class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
   @override
@@ -24,6 +26,10 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
       .child(StorageConstants.entity_directory_name)
       .child(StorageConstants.images_directory_name)
       .child(StorageConstants.library_directory_name);
+
+  HashMap<LibraryState, DocumentSnapshot?> _librariesByState = HashMap();
+  HashMap<UbigeoType, DocumentSnapshot?> _librariesByUbigeoPagination =
+      HashMap();
 
   /// Gets a [LibraryModel] from a DocumentSnapshot
   /// openHour and closeHour are converted from String to TimeOfDay directly
@@ -46,7 +52,6 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
         LibraryState.values[docSnap.get(LibraryCollectionNames.STATE)];
     List<String> searchKeys =
         List.from(docSnap.get(LibraryCollectionNames.SEARCH_KEYS));
-
     return LibraryModel(
       id: docSnap.id,
       created: docSnap.get(LibraryCollectionNames.CREATED).toDate(),
@@ -65,7 +70,7 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
       departmentId: docSnap.get(LibraryCollectionNames.DEPARTMENT_ID),
       provinceId: docSnap.get(LibraryCollectionNames.PROVINCE_ID),
       districtId: docSnap.get(LibraryCollectionNames.DISTRICT_ID),
-      website: docSnap.get(LibraryCollectionNames.WEBSITE),
+      website: docSnap.data()![LibraryCollectionNames.WEBSITE],
       gsUrl: _getBigGsUrl(docSnap.id, photoVersion),
       description: docSnap.get(LibraryCollectionNames.DESCRIPTION),
     );
@@ -81,9 +86,9 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     required String address,
     required Coordinates location,
     required List<String> services,
-    required List<String>? tags,
+    required List<String> tags,
     PickedFile? photo,
-    List<String>? searchKeys,
+    required List<String> searchKeys,
     required String departmentId,
     required String provinceId,
     required String districtId,
@@ -378,6 +383,105 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
       data[LibraryCollectionNames.DESCRIPTION] = description;
     }
     return data;
+  }
+
+  /// Parse a query stream to a list of libraries stream
+  Stream<List<LibraryModel>> parseLibraries(
+      Stream<QuerySnapshot> queryRes) async* {
+    await for (QuerySnapshot query in queryRes) {
+      List<LibraryModel> libraries = await getFromDocSnapList(query.docs);
+      addInRepository(libraries);
+      yield libraries;
+    }
+  }
+
+  /// This function returns a stream of [LibraryModel]s.
+  /// It's only for admin use.
+  ///
+  /// Set [resetPagination] to true to reset the pagination
+  /// Set [limit] to the number of libraries to be returned per page
+  /// Set [cache] to true to get the data from cache
+  Stream<List<LibraryModel>> getPendingLibraries(
+      {bool cache = false, int limit = 7, bool resetPagination = false}) {
+    if (resetPagination) {
+      _librariesByState[LibraryState.inReview] = null;
+    }
+    Query query = _collectionReference.where(LibraryCollectionNames.STATE,
+        isEqualTo: LibraryState.inReview.index);
+    query = query.orderBy(LibraryCollectionNames.CREATED, descending: true);
+    query = query.limit(limit);
+    return parseLibraries(PauloniaDocumentService.getStreamByQuery(query));
+  }
+
+  /// Get a list of accepted libraries
+  ///
+  /// Set [resetPagination] to true to reset the pagination
+  /// Set [limit] to the number of libraries to be returned per page
+  /// Set [cache] to true to get the data from cache
+  Future<List<LibraryModel>> getAcceptedLibraries(
+      {bool cache = false, int limit = 7, bool resetPagination = false}) async {
+    Query query = _collectionReference.where(LibraryCollectionNames.STATE,
+        isEqualTo: LibraryState.accepted.index);
+    if (resetPagination) {
+      _librariesByState[LibraryState.accepted] = null;
+    }
+    query = query.orderBy(LibraryCollectionNames.NAME);
+    query = query.limit(limit);
+    if (_librariesByState[LibraryState.accepted] != null) {
+      query =
+          query.startAfterDocument(_librariesByState[LibraryState.accepted]!);
+    }
+    QuerySnapshot? queryRes =
+        await PauloniaDocumentService.runQuery(query, cache);
+    if (queryRes == null || queryRes.docs.isEmpty) return [];
+    _librariesByState[LibraryState.accepted] = queryRes.docs.last;
+    List<LibraryModel> res = await getFromDocSnapList(queryRes.docs);
+    addInRepository(res);
+    return res;
+  }
+
+  /// Get a list of LibraryModel by [ubigeoCode] and [type]
+  ///
+  /// Set [resetPagination] to true to reset the pagination
+  /// Set [limit] to the number of libraries to be returned per page
+  /// Set [cache] to true to get the data from cache
+  Future<List<LibraryModel>> getLibrariesByUbigeo(
+    UbigeoType type,
+    String ubigeoCode, {
+    bool cache = false,
+    int limit = 7,
+    bool resetPagination = false,
+  }) async {
+    Query query;
+    if (resetPagination) {
+      _librariesByUbigeoPagination[type] = null;
+    }
+    switch (type) {
+      case UbigeoType.department:
+        query = _collectionReference.where(LibraryCollectionNames.DEPARTMENT_ID,
+            isEqualTo: ubigeoCode);
+        break;
+      case UbigeoType.province:
+        query = _collectionReference.where(LibraryCollectionNames.PROVINCE_ID,
+            isEqualTo: ubigeoCode);
+        break;
+      case UbigeoType.district:
+        query = _collectionReference.where(LibraryCollectionNames.DISTRICT_ID,
+            isEqualTo: ubigeoCode);
+        break;
+    }
+    query = query.orderBy(LibraryCollectionNames.NAME);
+    query = query.limit(limit);
+    if (_librariesByUbigeoPagination[type] != null) {
+      query = query.startAfterDocument(_librariesByUbigeoPagination[type]!);
+    }
+    QuerySnapshot? queryRes =
+        await PauloniaDocumentService.runQuery(query, cache);
+    if (queryRes == null || queryRes.docs.isEmpty) return [];
+    _librariesByUbigeoPagination[type] = queryRes.docs.last;
+    List<LibraryModel> res = await getFromDocSnapList(queryRes.docs);
+    addInRepository(res);
+    return res;
   }
 
   /// Gets the gsUrl for the big picture

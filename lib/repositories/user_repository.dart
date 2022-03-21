@@ -83,7 +83,7 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
   /// Creates an user
   ///
   /// The [userId] is the uid of firebase auth
-  Future<void> createUser({
+  Future<UserModel?> createUser({
     required String userId,
     required String name,
     required String email,
@@ -109,9 +109,22 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
     await _collectionReference.doc(userId).set(data);
     DocumentSnapshot? docSnap = await PauloniaDocumentService.getDoc(
         _collectionReference.doc(userId), false);
-    if (docSnap == null) return;
+    if (docSnap == null) return null;
     UserModel user = getFromDocSnap(docSnap);
     addInRepository([user]);
+    return user;
+  }
+
+  /// Gets an User from a logged FirebaseUser
+  ///
+  /// Set [cache] to true if you want to get the user from cache.
+  Future<UserModel?> getUserFromCredentials(User user,
+      {bool cache = false}) async {
+    DocumentSnapshot? userDoc = await PauloniaDocumentService.getDoc(
+        _collectionReference.doc(user.uid), cache);
+    if (userDoc == null) return null;
+    if (!userDoc.exists) return null;
+    return getFromDocSnap(userDoc, user: user);
   }
 
   /// Updates the user

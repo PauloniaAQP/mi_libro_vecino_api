@@ -10,28 +10,28 @@ class UbigeoService {
   /// This function loads the json files of codes of locations (ubigeos).
   Future<void> init() async {
     Map<String, dynamic> distMap =
-        await ApiUtils.parseAssetToJson(UbigeoStrings.DISTRICT_JSON);
+        await ApiUtils.parseAssetToJson(UbigeoStrings.districtJson);
     Map<String, dynamic> deparMap =
-        await ApiUtils.parseAssetToJson(UbigeoStrings.DEPARTMENTS_JSON);
+        await ApiUtils.parseAssetToJson(UbigeoStrings.departmentsJson);
     Map<String, dynamic> provMap =
-        await ApiUtils.parseAssetToJson(UbigeoStrings.PROVINCES_JSON);
+        await ApiUtils.parseAssetToJson(UbigeoStrings.provincesJson);
     _departments = HashMap();
     _provinces = HashMap();
     _districts = HashMap();
     deparMap.forEach((key, value) {
       _departments[key] = UbigeoModel(
         departmentId: key,
-        departmentName: value[UbigeoStrings.NAME],
+        departmentName: value[UbigeoStrings.name],
         type: UbigeoType.department,
       );
     });
     provMap.forEach((key, value) {
       _provinces[key] = UbigeoModel(
         provinceId: key,
-        provinceName: value[UbigeoStrings.NAME],
-        departmentId: value[UbigeoStrings.DEPARTMENT_ID],
+        provinceName: value[UbigeoStrings.name],
+        departmentId: value[UbigeoStrings.departmentId],
         departmentName:
-            _departments[value[UbigeoStrings.DEPARTMENT_ID]]?.departmentName ??
+            _departments[value[UbigeoStrings.departmentId]]?.departmentName ??
                 '',
         type: UbigeoType.province,
       );
@@ -39,14 +39,14 @@ class UbigeoService {
     distMap.forEach((key, value) {
       _districts[key] = UbigeoModel(
         districtId: key,
-        districtName: value[UbigeoStrings.NAME],
-        departmentId: value[UbigeoStrings.DEPARTMENT_ID],
+        districtName: value[UbigeoStrings.name],
+        departmentId: value[UbigeoStrings.departmentId],
         departmentName:
-            _departments[value[UbigeoStrings.DEPARTMENT_ID]]?.departmentName ??
+            _departments[value[UbigeoStrings.departmentId]]?.departmentName ??
                 '',
-        provinceId: value[UbigeoStrings.PROVINCE_ID],
+        provinceId: value[UbigeoStrings.provinceId],
         provinceName:
-            _provinces[value[UbigeoStrings.PROVINCE_ID]]?.provinceName ?? '',
+            _provinces[value[UbigeoStrings.provinceId]]?.provinceName ?? '',
         type: UbigeoType.district,
       );
     });

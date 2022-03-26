@@ -23,6 +23,18 @@ class AuthService {
     });
   }
 
+  /// Gets if the user is admin.
+  static Future<bool> isAdmin(User user) async {
+    final idTokenResult = await user.getIdTokenResult();
+    if (idTokenResult.claims == null ||
+        idTokenResult.claims?['isAdmin'] == null) {
+      return false;
+    } else {
+      if (!idTokenResult.claims?['isAdmin']) return false;
+      return true;
+    }
+  }
+
   /// Gets the current user
   static User? get currentUser => _auth.currentUser;
 

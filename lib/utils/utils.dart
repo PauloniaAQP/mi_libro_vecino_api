@@ -38,7 +38,7 @@ class ApiUtils {
   static Future<bool> uploadFile(
     String id,
     int photoVersion,
-    PickedFile image,
+    XFile image,
     Reference reference, {
     bool delAns = false,
   }) async {
@@ -47,11 +47,13 @@ class ApiUtils {
     try {
       if (delAns) {
         await reference
+            .child(id)
             .child(
                 prefix + "${photoVersion - 1}" + StorageConstants.pngExtension)
             .delete();
       }
       await reference
+          .child(id)
           .child(
               prefix + photoVersion.toString() + StorageConstants.pngExtension)
           .putData(

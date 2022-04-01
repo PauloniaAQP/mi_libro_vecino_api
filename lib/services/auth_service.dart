@@ -97,6 +97,16 @@ class AuthService {
     }
   }
 
+  /// Check if email is already in use
+  static Future<bool> isEmailInUse(String email) async {
+    final List<String> users = await _auth.fetchSignInMethodsForEmail(email);
+    if (users.isEmpty) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
   /// Sends an email verification to [user]
   static void sendEmailVerification(User user) {
     user.sendEmailVerification();
@@ -107,7 +117,7 @@ class AuthService {
     _auth.signOut();
   }
 
-  /// Sign Out the session of the user.
+  /// Sign Out and remove the user.
   static Future<void> removeUser(User user) async {
     user.delete();
   }

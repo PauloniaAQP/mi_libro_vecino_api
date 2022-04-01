@@ -23,7 +23,6 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
 
   final Reference _storageReference = FirebaseStorage.instance
       .ref()
-      .child(StorageConstants.entityDirectoryName)
       .child(StorageConstants.imagesDirectoryName)
       .child(StorageConstants.libraryDirectoryName);
 
@@ -87,7 +86,7 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     required Coordinates location,
     required List<String> services,
     required List<String> tags,
-    PickedFile? photo,
+    XFile? photo,
     required List<String> searchKeys,
     required String departmentId,
     required String provinceId,
@@ -100,7 +99,6 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     if (photo != null) {
       photoVersion++;
 
-      /// TODO(oscarnar): It must be tested
       bool response = await ApiUtils.uploadFile(
           docRef.id, photoVersion, photo, _storageReference);
       if (!response) photoVersion--;
@@ -146,7 +144,7 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     required Coordinates location,
     required List<String> services,
     required List<String>? tags,
-    PickedFile? photo,
+    XFile? photo,
     List<String>? searchKeys,
     required String departmentId,
     required String provinceId,
@@ -159,7 +157,6 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     if (photo != null) {
       photoVersion++;
 
-      /// TODO(oscarnar): It should be tested
       bool response = await ApiUtils.uploadFile(
           docRef.id, photoVersion, photo, _storageReference);
       if (!response) photoVersion--;
@@ -240,7 +237,7 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     Coordinates? location,
     List<String>? services,
     List<String>? tags,
-    PickedFile? photo,
+    XFile? photo,
     List<String>? searchKeys,
     String? departmentId,
     String? provinceId,

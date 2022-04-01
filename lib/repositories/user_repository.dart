@@ -20,7 +20,6 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
 
   final Reference _storageReference = FirebaseStorage.instance
       .ref()
-      .child(StorageConstants.entityDirectoryName)
       .child(StorageConstants.imagesDirectoryName)
       .child(StorageConstants.userDirectoryName);
 
@@ -49,13 +48,12 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
     required String name,
     required String email,
     String? phone,
-    PickedFile? photo,
+    XFile? photo,
   }) async {
     int photoVersion = -1;
     if (photo != null) {
       photoVersion++;
 
-      /// TODO(oscarnar): It must be tested
       bool response = await ApiUtils.uploadFile(
           userId, photoVersion, photo, _storageReference);
       if (!response) photoVersion--;
@@ -88,13 +86,12 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
     required String name,
     required String email,
     required String phone,
-    PickedFile? photo,
+    XFile? photo,
   }) async {
     int photoVersion = -1;
     if (photo != null) {
       photoVersion++;
 
-      /// TODO: It must be tested
       bool response = await ApiUtils.uploadFile(
           userId, photoVersion, photo, _storageReference);
       if (!response) photoVersion--;
@@ -133,7 +130,7 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
     String? name,
     String? email,
     String? phone,
-    PickedFile? photo,
+    XFile? photo,
   }) async {
     Map<String, dynamic> data = {};
     if (photo != null) {

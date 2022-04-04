@@ -10,21 +10,22 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  catcher: 0.6.6
+  cloud_firestore: 1.0.7
+  flutter_lints: ^1.0.0
+  firebase_auth: 1.0.3
+  firebase_storage: 10.0.1
+  http: ^0.13.4
+  image_picker: ^0.8.4+10
+  # geocoder: 0.2.1
+  geolocator: ^8.2.0
+  paulonia_document_service: ^0.2.0
+  paulonia_error_service: 0.3.0
+  paulonia_repository: 0.3.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^1.0.0
-  firebase_auth: 1.0.3
-  cloud_firestore: 1.0.7
-  firebase_storage: 10.0.1
-  paulonia_repository: 0.3.1
-  paulonia_error_service: 0.3.0
-  paulonia_document_service: ^0.2.0
-  image_picker: ^0.8.4+10
-  geoflutterfire: 3.0.0-nullsafety.2
-  diacritic: ^0.1.3
-  catcher: 0.6.6
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

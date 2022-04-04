@@ -1,11 +1,11 @@
 class UbigeoStrings {
-  static const String DEPARTMENTS_JSON = "assets/ubigeo/departmentIds.json";
-  static const String PROVINCES_JSON = "assets/ubigeo/provinceIds.json";
-  static const String DISTRICT_JSON = "assets/ubigeo/districtIds.json";
+  static const String departmentsJson = "assets/ubigeo/departmentIds.json";
+  static const String provincesJson = "assets/ubigeo/provinceIds.json";
+  static const String districtJson = "assets/ubigeo/districtIds.json";
 
-  static const String DEPARTMENT_ID = "department_id";
-  static const String PROVINCE_ID = "province_id";
-  static const String DISTRICT_ID = "district_id";
+  static const String departmentId = "department_id";
+  static const String provinceId = "province_id";
+  static const String districtId = "district_id";
 
-  static const String NAME = "name";
+  static const String name = "name";
 }

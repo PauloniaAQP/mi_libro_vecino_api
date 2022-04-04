@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:mi_libro_vecino_api/utils/constants/storage/storage_constants.dart';
+import 'package:paulonia_error_service/paulonia_error_service.dart';
 
 class ApiUtils {
   /// Loads an asset from a path
@@ -37,7 +38,7 @@ class ApiUtils {
   static Future<bool> uploadFile(
     String id,
     int photoVersion,
-    PickedFile image,
+    XFile image,
     Reference reference, {
     bool delAns = false,
   }) async {
@@ -46,13 +47,15 @@ class ApiUtils {
     try {
       if (delAns) {
         await reference
+            .child(id)
             .child(
-                prefix + "${photoVersion - 1}" + StorageConstants.png_extension)
+                prefix + "${photoVersion - 1}" + StorageConstants.pngExtension)
             .delete();
       }
       await reference
+          .child(id)
           .child(
-              prefix + photoVersion.toString() + StorageConstants.png_extension)
+              prefix + photoVersion.toString() + StorageConstants.pngExtension)
           .putData(
               img,
               SettableMetadata(
@@ -60,8 +63,7 @@ class ApiUtils {
               ));
       return true;
     } on FirebaseException catch (e, stacktrace) {
-      /// fii on web doesn't work
-      // PauloniaErrorService.sendError(e, stacktrace);
+      PauloniaErrorService.sendError(e, stacktrace);
       return false;
     }
   }

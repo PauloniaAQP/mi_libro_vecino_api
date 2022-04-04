@@ -1,9 +1,39 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mi_libro_vecino_api/utils/constants/enums/user_enums.dart';
 import 'package:paulonia_error_service/paulonia_error_service.dart';
+import 'dart:async';
+
+enum AuthenticationStatus {
+  authenticated,
+  unauthenticated,
+  authenticating,
+}
 
 class AuthService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  /// Stream of [AuthenticationStatus] which will emit the current
+  /// user when the authentication state changes.
+  static Stream<AuthenticationStatus> get status {
+    return _auth.authStateChanges().map((firebaseUser) {
+      final state = firebaseUser == null
+          ? AuthenticationStatus.unauthenticated
+          : AuthenticationStatus.authenticated;
+      return state;
+    });
+  }
+
+  /// Gets if the user is admin.
+  static Future<bool> isAdmin(User user) async {
+    final idTokenResult = await user.getIdTokenResult();
+    if (idTokenResult.claims == null ||
+        idTokenResult.claims?['isAdmin'] == null) {
+      return false;
+    } else {
+      if (!idTokenResult.claims?['isAdmin']) return false;
+      return true;
+    }
+  }
 
   /// Gets the current user
   static User? get currentUser => _auth.currentUser;
@@ -29,7 +59,8 @@ class AuthService {
       User? user = (await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
-      )).user;
+      ))
+          .user;
       await user?.updateProfile(
         displayName: name,
       );
@@ -43,13 +74,14 @@ class AuthService {
   }
 
   /// Sign in with email and password
-  static Future<User?> emailPasswordSignIn(
-      String email, String password, {bool isAdmin = false}) async {
+  static Future<User?> emailPasswordSignIn(String email, String password,
+      {bool isAdmin = false}) async {
     try {
       final User? user = (await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
-      )).user;
+      ))
+          .user;
       if (isAdmin) {
         if (user == null) {
           return null;
@@ -65,6 +97,16 @@ class AuthService {
     }
   }
 
+  /// Check if email is already in use
+  static Future<bool> isEmailInUse(String email) async {
+    final List<String> users = await _auth.fetchSignInMethodsForEmail(email);
+    if (users.isEmpty) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
   /// Sends an email verification to [user]
   static void sendEmailVerification(User user) {
     user.sendEmailVerification();
@@ -75,7 +117,7 @@ class AuthService {
     _auth.signOut();
   }
 
-  /// Sign Out the session of the user.
+  /// Sign Out and remove the user.
   static Future<void> removeUser(User user) async {
     user.delete();
   }

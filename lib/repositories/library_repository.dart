@@ -23,12 +23,11 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
 
   final Reference _storageReference = FirebaseStorage.instance
       .ref()
-      .child(StorageConstants.entity_directory_name)
-      .child(StorageConstants.images_directory_name)
-      .child(StorageConstants.library_directory_name);
+      .child(StorageConstants.imagesDirectoryName)
+      .child(StorageConstants.libraryDirectoryName);
 
-  HashMap<LibraryState, DocumentSnapshot?> _librariesByState = HashMap();
-  HashMap<UbigeoType, DocumentSnapshot?> _librariesByUbigeoPagination =
+  final HashMap<LibraryState, DocumentSnapshot?> _librariesByState = HashMap();
+  final HashMap<UbigeoType, DocumentSnapshot?> _librariesByUbigeoPagination =
       HashMap();
 
   /// Gets a [LibraryModel] from a DocumentSnapshot
@@ -36,43 +35,43 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
   @override
   LibraryModel getFromDocSnap(DocumentSnapshot docSnap) {
     int photoVersion =
-        docSnap.data()?[LibraryCollectionNames.PHOTO_VERSION] ?? -1;
+        docSnap.data()?[LibraryCollectionNames.photoVersion] ?? -1;
     LibraryType type =
-        LibraryType.values[docSnap.get(LibraryCollectionNames.TYPE)];
+        LibraryType.values[docSnap.get(LibraryCollectionNames.type)];
     TimeOfDay openingHour = ApiUtils.timeOfDayFromString(
-        docSnap.get(LibraryCollectionNames.OPENING_HOUR));
+        docSnap.get(LibraryCollectionNames.openingHour));
     TimeOfDay closingHour = ApiUtils.timeOfDayFromString(
-        docSnap.get(LibraryCollectionNames.CLOSING_HOUR));
+        docSnap.get(LibraryCollectionNames.closingHour));
     Coordinates location =
-        Coordinates.fromGeopoint(docSnap.get(LibraryCollectionNames.LOCATION));
+        Coordinates.fromGeopoint(docSnap.get(LibraryCollectionNames.location));
     List<String> services =
-        List.from(docSnap.get(LibraryCollectionNames.SERVICES));
-    List<String> tags = List.from(docSnap.get(LibraryCollectionNames.TAGS));
+        List.from(docSnap.get(LibraryCollectionNames.services));
+    List<String> tags = List.from(docSnap.get(LibraryCollectionNames.tags));
     LibraryState state =
-        LibraryState.values[docSnap.get(LibraryCollectionNames.STATE)];
+        LibraryState.values[docSnap.get(LibraryCollectionNames.state)];
     List<String> searchKeys =
-        List.from(docSnap.get(LibraryCollectionNames.SEARCH_KEYS));
+        List.from(docSnap.get(LibraryCollectionNames.searchKeys));
     return LibraryModel(
       id: docSnap.id,
-      created: docSnap.get(LibraryCollectionNames.CREATED).toDate(),
-      ownerId: docSnap.get(LibraryCollectionNames.OWNER_ID),
-      name: docSnap.get(LibraryCollectionNames.NAME),
+      created: docSnap.get(LibraryCollectionNames.created).toDate(),
+      ownerId: docSnap.get(LibraryCollectionNames.ownerId),
+      name: docSnap.get(LibraryCollectionNames.name),
       openingHour: openingHour,
       closingHour: closingHour,
       type: type,
-      address: docSnap.get(LibraryCollectionNames.ADDRESS),
+      address: docSnap.get(LibraryCollectionNames.address),
       location: location,
       services: services,
       tags: tags,
       photoVersion: photoVersion,
       state: state,
       searchKeys: searchKeys,
-      departmentId: docSnap.get(LibraryCollectionNames.DEPARTMENT_ID),
-      provinceId: docSnap.get(LibraryCollectionNames.PROVINCE_ID),
-      districtId: docSnap.get(LibraryCollectionNames.DISTRICT_ID),
-      website: docSnap.data()![LibraryCollectionNames.WEBSITE],
+      departmentId: docSnap.get(LibraryCollectionNames.departmentId),
+      provinceId: docSnap.get(LibraryCollectionNames.provinceId),
+      districtId: docSnap.get(LibraryCollectionNames.districtId),
+      website: docSnap.data()![LibraryCollectionNames.website],
       gsUrl: _getBigGsUrl(docSnap.id, photoVersion),
-      description: docSnap.get(LibraryCollectionNames.DESCRIPTION),
+      description: docSnap.get(LibraryCollectionNames.description),
     );
   }
 
@@ -87,7 +86,7 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     required Coordinates location,
     required List<String> services,
     required List<String> tags,
-    PickedFile? photo,
+    XFile? photo,
     required List<String> searchKeys,
     required String departmentId,
     required String provinceId,
@@ -100,7 +99,6 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     if (photo != null) {
       photoVersion++;
 
-      /// TODO: It must be tested
       bool response = await ApiUtils.uploadFile(
           docRef.id, photoVersion, photo, _storageReference);
       if (!response) photoVersion--;
@@ -124,7 +122,7 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
       state: LibraryState.inReview,
       description: description,
     );
-    data[LibraryCollectionNames.CREATED] = FieldValue.serverTimestamp();
+    data[LibraryCollectionNames.created] = FieldValue.serverTimestamp();
     await docRef.set(data);
     DocumentSnapshot? docSnap = await PauloniaDocumentService.getDoc(
         _collectionReference.doc(docRef.id), false);
@@ -146,7 +144,7 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     required Coordinates location,
     required List<String> services,
     required List<String>? tags,
-    PickedFile? photo,
+    XFile? photo,
     List<String>? searchKeys,
     required String departmentId,
     required String provinceId,
@@ -159,7 +157,6 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     if (photo != null) {
       photoVersion++;
 
-      /// TODO: It should be tested
       bool response = await ApiUtils.uploadFile(
           docRef.id, photoVersion, photo, _storageReference);
       if (!response) photoVersion--;
@@ -183,11 +180,11 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
       state: LibraryState.inReview,
       description: description,
     );
-    data[LibraryCollectionNames.CREATED] = FieldValue.serverTimestamp();
+    data[LibraryCollectionNames.created] = FieldValue.serverTimestamp();
     batch.set(docRef, data);
     LibraryModel library = LibraryModel(
       id: docRef.id,
-      created: data[LibraryCollectionNames.CREATED].toDate(),
+      created: data[LibraryCollectionNames.created].toDate(),
       ownerId: ownerId,
       name: name,
       openingHour: openingHour,
@@ -213,7 +210,7 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
   /// Gets a library from an ownerId
   Future<LibraryModel?> getLibraryByOwnerId(String ownerId) async {
     QuerySnapshot? querySnap = await _collectionReference
-        .where(LibraryCollectionNames.OWNER_ID, isEqualTo: ownerId)
+        .where(LibraryCollectionNames.ownerId, isEqualTo: ownerId)
         .get();
     if (querySnap.docs.isEmpty) return null;
     DocumentSnapshot? docSnap = querySnap.docs.first;
@@ -240,7 +237,7 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     Coordinates? location,
     List<String>? services,
     List<String>? tags,
-    PickedFile? photo,
+    XFile? photo,
     List<String>? searchKeys,
     String? departmentId,
     String? provinceId,
@@ -255,70 +252,70 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
       if (response) {
         library.photoVersion++;
         library.gsUrl = _getBigGsUrl(library.id, library.photoVersion);
-        data[LibraryCollectionNames.PHOTO_VERSION] = library.photoVersion;
+        data[LibraryCollectionNames.photoVersion] = library.photoVersion;
       }
     }
     if (ownerId != null) {
       library.ownerId = ownerId;
-      data[LibraryCollectionNames.OWNER_ID] = ownerId;
+      data[LibraryCollectionNames.ownerId] = ownerId;
     }
     if (name != null) {
       library.name = name;
-      data[LibraryCollectionNames.NAME] = name;
+      data[LibraryCollectionNames.name] = name;
     }
     if (type != null) {
       library.type = type;
-      data[LibraryCollectionNames.TYPE] = type.index;
+      data[LibraryCollectionNames.type] = type.index;
     }
     if (openingHour != null) {
       library.openingHour = openingHour;
-      data[LibraryCollectionNames.OPENING_HOUR] =
+      data[LibraryCollectionNames.openingHour] =
           ApiUtils.timeOfDayToString(openingHour);
     }
     if (closingHour != null) {
       library.closingHour = closingHour;
-      data[LibraryCollectionNames.CLOSING_HOUR] =
+      data[LibraryCollectionNames.closingHour] =
           ApiUtils.timeOfDayToString(closingHour);
     }
     if (address != null) {
       library.address = address;
-      data[LibraryCollectionNames.ADDRESS] = address;
+      data[LibraryCollectionNames.address] = address;
     }
     if (location != null) {
       library.location = location;
-      data[LibraryCollectionNames.LOCATION] = location.toGeoPoint();
+      data[LibraryCollectionNames.location] = location.toGeoPoint();
     }
     if (services != null) {
       library.services = services;
-      data[LibraryCollectionNames.SERVICES] = services;
+      data[LibraryCollectionNames.services] = services;
     }
     if (tags != null) {
       library.tags = tags;
-      data[LibraryCollectionNames.TAGS] = tags;
+      data[LibraryCollectionNames.tags] = tags;
     }
     if (searchKeys != null) {
       library.searchKeys = searchKeys;
-      data[LibraryCollectionNames.SEARCH_KEYS] = searchKeys;
+      data[LibraryCollectionNames.searchKeys] = searchKeys;
     }
     if (departmentId != null) {
       library.departmentId = departmentId;
-      data[LibraryCollectionNames.DEPARTMENT_ID] = departmentId;
+      data[LibraryCollectionNames.departmentId] = departmentId;
     }
     if (provinceId != null) {
       library.provinceId = provinceId;
-      data[LibraryCollectionNames.PROVINCE_ID] = provinceId;
+      data[LibraryCollectionNames.provinceId] = provinceId;
     }
     if (districtId != null) {
       library.districtId = districtId;
-      data[LibraryCollectionNames.DISTRICT_ID] = districtId;
+      data[LibraryCollectionNames.districtId] = districtId;
     }
     if (website != null) {
       library.website = website;
-      data[LibraryCollectionNames.WEBSITE] = website;
+      data[LibraryCollectionNames.website] = website;
     }
     if (description != null) {
       library.description = description;
-      data[LibraryCollectionNames.DESCRIPTION] = description;
+      data[LibraryCollectionNames.description] = description;
     }
     _collectionReference.doc(library.id).update(data);
     addInRepository([library]);
@@ -345,42 +342,42 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     String? description,
   }) {
     Map<String, dynamic> data = {};
-    if (userId != null) data[LibraryCollectionNames.OWNER_ID] = userId;
-    if (name != null) data[LibraryCollectionNames.NAME] = name;
-    if (type != null) data[LibraryCollectionNames.TYPE] = type.index;
-    if (state != null) data[LibraryCollectionNames.STATE] = state.index;
+    if (userId != null) data[LibraryCollectionNames.ownerId] = userId;
+    if (name != null) data[LibraryCollectionNames.name] = name;
+    if (type != null) data[LibraryCollectionNames.type] = type.index;
+    if (state != null) data[LibraryCollectionNames.state] = state.index;
     if (openingHour != null) {
-      data[LibraryCollectionNames.OPENING_HOUR] =
+      data[LibraryCollectionNames.openingHour] =
           ApiUtils.timeOfDayToString(openingHour);
     }
     if (closingHour != null) {
-      data[LibraryCollectionNames.CLOSING_HOUR] =
+      data[LibraryCollectionNames.closingHour] =
           ApiUtils.timeOfDayToString(closingHour);
     }
-    if (address != null) data[LibraryCollectionNames.ADDRESS] = address;
+    if (address != null) data[LibraryCollectionNames.address] = address;
     if (location != null) {
-      data[LibraryCollectionNames.LOCATION] = location.toGeoPoint();
+      data[LibraryCollectionNames.location] = location.toGeoPoint();
     }
-    if (services != null) data[LibraryCollectionNames.SERVICES] = services;
-    if (tags != null) data[LibraryCollectionNames.TAGS] = tags;
+    if (services != null) data[LibraryCollectionNames.services] = services;
+    if (tags != null) data[LibraryCollectionNames.tags] = tags;
     if (searchKeys != null) {
-      data[LibraryCollectionNames.SEARCH_KEYS] = searchKeys;
+      data[LibraryCollectionNames.searchKeys] = searchKeys;
     }
     if (photoVersion != null) {
-      data[LibraryCollectionNames.PHOTO_VERSION] = photoVersion;
+      data[LibraryCollectionNames.photoVersion] = photoVersion;
     }
-    if (website != null) data[LibraryCollectionNames.WEBSITE] = website;
+    if (website != null) data[LibraryCollectionNames.website] = website;
     if (departmentId != null) {
-      data[LibraryCollectionNames.DEPARTMENT_ID] = departmentId;
+      data[LibraryCollectionNames.departmentId] = departmentId;
     }
     if (provinceId != null) {
-      data[LibraryCollectionNames.PROVINCE_ID] = provinceId;
+      data[LibraryCollectionNames.provinceId] = provinceId;
     }
     if (districtId != null) {
-      data[LibraryCollectionNames.DISTRICT_ID] = districtId;
+      data[LibraryCollectionNames.districtId] = districtId;
     }
     if (description != null) {
-      data[LibraryCollectionNames.DESCRIPTION] = description;
+      data[LibraryCollectionNames.description] = description;
     }
     return data;
   }
@@ -406,9 +403,9 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     if (resetPagination) {
       _librariesByState[LibraryState.inReview] = null;
     }
-    Query query = _collectionReference.where(LibraryCollectionNames.STATE,
+    Query query = _collectionReference.where(LibraryCollectionNames.state,
         isEqualTo: LibraryState.inReview.index);
-    query = query.orderBy(LibraryCollectionNames.CREATED, descending: true);
+    query = query.orderBy(LibraryCollectionNames.created, descending: true);
     query = query.limit(limit);
     return parseLibraries(PauloniaDocumentService.getStreamByQuery(query));
   }
@@ -420,12 +417,12 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
   /// Set [cache] to true to get the data from cache
   Future<List<LibraryModel>> getAcceptedLibraries(
       {bool cache = false, int limit = 7, bool resetPagination = false}) async {
-    Query query = _collectionReference.where(LibraryCollectionNames.STATE,
+    Query query = _collectionReference.where(LibraryCollectionNames.state,
         isEqualTo: LibraryState.accepted.index);
     if (resetPagination) {
       _librariesByState[LibraryState.accepted] = null;
     }
-    query = query.orderBy(LibraryCollectionNames.NAME);
+    query = query.orderBy(LibraryCollectionNames.name);
     query = query.limit(limit);
     if (_librariesByState[LibraryState.accepted] != null) {
       query =
@@ -458,19 +455,19 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     }
     switch (type) {
       case UbigeoType.department:
-        query = _collectionReference.where(LibraryCollectionNames.DEPARTMENT_ID,
+        query = _collectionReference.where(LibraryCollectionNames.departmentId,
             isEqualTo: ubigeoCode);
         break;
       case UbigeoType.province:
-        query = _collectionReference.where(LibraryCollectionNames.PROVINCE_ID,
+        query = _collectionReference.where(LibraryCollectionNames.provinceId,
             isEqualTo: ubigeoCode);
         break;
       case UbigeoType.district:
-        query = _collectionReference.where(LibraryCollectionNames.DISTRICT_ID,
+        query = _collectionReference.where(LibraryCollectionNames.districtId,
             isEqualTo: ubigeoCode);
         break;
     }
-    query = query.orderBy(LibraryCollectionNames.NAME);
+    query = query.orderBy(LibraryCollectionNames.name);
     query = query.limit(limit);
     if (_librariesByUbigeoPagination[type] != null) {
       query = query.startAfterDocument(_librariesByUbigeoPagination[type]!);
@@ -488,22 +485,22 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
   String _getBigGsUrl(String userId, int photoVersion) {
     if (photoVersion >= 0) {
       return ApiConfiguration.gsBucketUrl +
-          StorageConstants.images_directory_name +
+          StorageConstants.imagesDirectoryName +
           '/' +
-          StorageConstants.library_directory_name +
+          StorageConstants.libraryDirectoryName +
           '/' +
           userId +
           '/' +
-          StorageConstants.big_prefix +
+          StorageConstants.bigPrefix +
           photoVersion.toString() +
-          StorageConstants.jpg_extension;
+          StorageConstants.jpgExtension;
     }
     return ApiConfiguration.gsBucketUrl +
-        StorageConstants.images_directory_name +
+        StorageConstants.imagesDirectoryName +
         '/' +
-        StorageConstants.default_directory_name +
+        StorageConstants.defaultDirectoryName +
         '/' +
-        StorageConstants.default_library_profile +
-        StorageConstants.jpg_extension;
+        StorageConstants.defaultLibraryProfile +
+        StorageConstants.jpgExtension;
   }
 }

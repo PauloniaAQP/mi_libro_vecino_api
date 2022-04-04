@@ -20,21 +20,20 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
 
   final Reference _storageReference = FirebaseStorage.instance
       .ref()
-      .child(StorageConstants.entity_directory_name)
-      .child(StorageConstants.images_directory_name)
-      .child(StorageConstants.user_directory_name);
+      .child(StorageConstants.imagesDirectoryName)
+      .child(StorageConstants.userDirectoryName);
 
   /// Get a User model from a document snapshot
   @override
   UserModel getFromDocSnap(DocumentSnapshot docSnap, {User? user}) {
-    int photoVersion = docSnap.data()?[UserCollectionNames.PHOTO_VERSION] ?? -1;
+    int photoVersion = docSnap.data()?[UserCollectionNames.photoVersion] ?? -1;
     return UserModel(
       photoVersion: photoVersion,
       id: docSnap.id,
-      name: docSnap.get(UserCollectionNames.NAME),
-      phone: docSnap.data()?[UserCollectionNames.PHONE],
-      email: docSnap.get(UserCollectionNames.EMAIL),
-      created: docSnap.get(UserCollectionNames.CREATED).toDate(),
+      name: docSnap.get(UserCollectionNames.name),
+      phone: docSnap.data()?[UserCollectionNames.phone],
+      email: docSnap.get(UserCollectionNames.email),
+      created: docSnap.get(UserCollectionNames.created).toDate(),
       firebaseUser: user,
       gsUrl: _getBigGsUrl(docSnap.id, photoVersion),
     );
@@ -49,13 +48,12 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
     required String name,
     required String email,
     String? phone,
-    PickedFile? photo,
+    XFile? photo,
   }) async {
     int photoVersion = -1;
     if (photo != null) {
       photoVersion++;
 
-      /// TODO: It must be tested
       bool response = await ApiUtils.uploadFile(
           userId, photoVersion, photo, _storageReference);
       if (!response) photoVersion--;
@@ -66,13 +64,13 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
       phone: phone,
       photoVersion: photoVersion,
     );
-    data[UserCollectionNames.CREATED] = FieldValue.serverTimestamp();
+    data[UserCollectionNames.created] = FieldValue.serverTimestamp();
     batch.set(_collectionReference.doc(userId), data);
     UserModel user = UserModel(
         id: userId,
         name: name,
         email: email,
-        created: data[UserCollectionNames.CREATED],
+        created: data[UserCollectionNames.created],
         phone: phone,
         photoVersion: photoVersion,
         gsUrl: _getBigGsUrl(userId, photoVersion));
@@ -83,18 +81,17 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
   /// Creates an user
   ///
   /// The [userId] is the uid of firebase auth
-  Future<void> createUser({
+  Future<UserModel?> createUser({
     required String userId,
     required String name,
     required String email,
     required String phone,
-    PickedFile? photo,
+    XFile? photo,
   }) async {
     int photoVersion = -1;
     if (photo != null) {
       photoVersion++;
 
-      /// TODO: It must be tested
       bool response = await ApiUtils.uploadFile(
           userId, photoVersion, photo, _storageReference);
       if (!response) photoVersion--;
@@ -105,13 +102,26 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
       phone: phone,
       photoVersion: photoVersion,
     );
-    data[UserCollectionNames.CREATED] = FieldValue.serverTimestamp();
+    data[UserCollectionNames.created] = FieldValue.serverTimestamp();
     await _collectionReference.doc(userId).set(data);
     DocumentSnapshot? docSnap = await PauloniaDocumentService.getDoc(
         _collectionReference.doc(userId), false);
-    if (docSnap == null) return;
+    if (docSnap == null) return null;
     UserModel user = getFromDocSnap(docSnap);
     addInRepository([user]);
+    return user;
+  }
+
+  /// Gets an User from a logged FirebaseUser
+  ///
+  /// Set [cache] to true if you want to get the user from cache.
+  Future<UserModel?> getUserFromCredentials(User user,
+      {bool cache = false}) async {
+    DocumentSnapshot? userDoc = await PauloniaDocumentService.getDoc(
+        _collectionReference.doc(user.uid), cache);
+    if (userDoc == null) return null;
+    if (!userDoc.exists) return null;
+    return getFromDocSnap(userDoc, user: user);
   }
 
   /// Updates the user
@@ -120,7 +130,7 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
     String? name,
     String? email,
     String? phone,
-    PickedFile? photo,
+    XFile? photo,
   }) async {
     Map<String, dynamic> data = {};
     if (photo != null) {
@@ -128,20 +138,20 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
       bool response = await ApiUtils.uploadFile(
           user.id, user.photoVersion, photo, _storageReference);
       if (!response) user.photoVersion--;
-      data[UserCollectionNames.PHOTO_VERSION] = user.photoVersion;
+      data[UserCollectionNames.photoVersion] = user.photoVersion;
       user.gsUrl = _getBigGsUrl(user.id, user.photoVersion);
     }
     if (name != null) {
       user.name = name;
-      data[UserCollectionNames.NAME] = name;
+      data[UserCollectionNames.name] = name;
     }
     if (email != null) {
       user.email = email;
-      data[UserCollectionNames.EMAIL] = email;
+      data[UserCollectionNames.email] = email;
     }
     if (phone != null) {
       user.phone = phone;
-      data[UserCollectionNames.PHONE] = phone;
+      data[UserCollectionNames.phone] = phone;
     }
     _collectionReference.doc(user.id).update(data);
     addInRepository([user]);
@@ -162,11 +172,11 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
     int? photoVersion,
   }) {
     Map<String, dynamic> data = {};
-    if (name != null) data[UserCollectionNames.NAME] = name;
-    if (email != null) data[UserCollectionNames.EMAIL] = email;
-    if (phone != null) data[UserCollectionNames.PHONE] = phone;
+    if (name != null) data[UserCollectionNames.name] = name;
+    if (email != null) data[UserCollectionNames.email] = email;
+    if (phone != null) data[UserCollectionNames.phone] = phone;
     if (photoVersion != null) {
-      data[UserCollectionNames.PHOTO_VERSION] = photoVersion;
+      data[UserCollectionNames.photoVersion] = photoVersion;
     }
     return data;
   }
@@ -175,22 +185,22 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
   String _getBigGsUrl(String userId, int photoVersion) {
     if (photoVersion >= 0) {
       return ApiConfiguration.gsBucketUrl +
-          StorageConstants.images_directory_name +
+          StorageConstants.imagesDirectoryName +
           '/' +
-          StorageConstants.user_directory_name +
+          StorageConstants.userDirectoryName +
           '/' +
           userId +
           '/' +
-          StorageConstants.big_prefix +
+          StorageConstants.bigPrefix +
           photoVersion.toString() +
-          StorageConstants.jpg_extension;
+          StorageConstants.jpgExtension;
     }
     return ApiConfiguration.gsBucketUrl +
-        StorageConstants.images_directory_name +
+        StorageConstants.imagesDirectoryName +
         '/' +
-        StorageConstants.default_directory_name +
+        StorageConstants.defaultDirectoryName +
         '/' +
-        StorageConstants.default_user_profile +
-        StorageConstants.jpg_extension;
+        StorageConstants.defaultUserProfile +
+        StorageConstants.jpgExtension;
   }
 }

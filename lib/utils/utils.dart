@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:mi_libro_vecino_api/utils/constants/storage/storage_constants.dart';
+import 'package:diacritic/diacritic.dart';
 import 'package:paulonia_error_service/paulonia_error_service.dart';
 
 class ApiUtils {
@@ -66,6 +67,14 @@ class ApiUtils {
       PauloniaErrorService.sendError(e, stacktrace);
       return false;
     }
+  }
+
+  /// Returned separate words formatted to lowerCase & remove diacritics
+  static List<String> preprocessWord(String word) {
+    word = word.toLowerCase();
+    word = word.trim();
+    word = removeDiacritics(word);
+    return word.split(' ');
   }
 }
 

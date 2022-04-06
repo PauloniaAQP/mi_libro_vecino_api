@@ -15,9 +15,9 @@ dependencies:
   flutter_lints: ^1.0.0
   firebase_auth: 1.0.3
   firebase_storage: 10.0.1
+  google_maps: 6.1.0
   http: ^0.13.4
   image_picker: ^0.8.4+10
-  # geocoder: 0.2.1
   geolocator: ^8.2.0
   paulonia_document_service: ^0.2.0
   paulonia_error_service: 0.3.0

@@ -2,52 +2,46 @@ import 'dart:convert';
 
 import 'package:mi_libro_vecino_api/api_configuration.dart';
 import 'package:mi_libro_vecino_api/models/ubigeo_model.dart';
+import 'package:mi_libro_vecino_api/utils/constants/enums/geo_enums.dart';
 import 'package:mi_libro_vecino_api/utils/constants/enums/ubigeo_enums.dart';
 import 'package:mi_libro_vecino_api/utils/utils.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps/google_maps.dart';
 import 'package:http/http.dart' as http;
 import 'package:paulonia_error_service/paulonia_error_service.dart';
 
 class GeoService {
-  /// Open Cage Data API to parse coordinates to an Address
+  /// Gets the address from the coordinates
   ///
-  /// Temporal solution for this problem on web, to get the address from coordinates
-  /// I use an external API, but it's not the best solution, because it's not free (i'm not sure)
-  /// it could be illegal to use it, but it's a good solution for this problem.
-  /// This API returns a lot of information like postcode, address, country, etc.
-  ///
-  /// To use we need to pass the coordinates and the API key like this:
-  /// https://api.opencagedata.com/geocode/v1/json?q=[latitud]+[longitud]&key=03c48dae07364cabb7f121d8c1519492&no_annotations=1&language=en
-  ///
-  /// For more information about the API, see: https://www.gps-coordinates.net/api
+  /// The function use the Google Maps API to get the address from the coordinates
+  /// - If coordinates are null or the API don't found an address,
+  /// the function returns null.
+  /// - If occurs an error while it make the request, the function returns null
+  /// and sends the error to PauloniaErrorService
   static Future<String?> getAddress(Coordinates? location) async {
     if (location == null) {
-      return null;
+      return Future.error(GeoServiceStatus.coordinatesNotFound);
     }
-    final String coordinates = '${location.latitude},${location.longitude}';
-
-    /// q: is the coordinates (lat, lng)
-    final Map<String, String> query = {
-      'q': coordinates,
-      'key': ApiConfiguration.geolocationAddressKey,
-      'no_annotations': '1',
-      'language': 'es',
-    };
-    http.Response response = await http.get(Uri.https(
-      ApiConfiguration.geolocationAPIUrl,
-      ApiConfiguration.geolocationAPIPath,
-      query,
-    ));
-    try {
-      if (response.statusCode == 200) {
-        var responseData = json.decode(response.body);
-        return responseData['results'][0]['formatted'];
+    final latlng = LatLng(location.latitude, location.longitude);
+    String? address;
+    dynamic error;
+    await Geocoder().geocode(GeocoderRequest()..location = latlng,
+        (results, status) {
+      if (status == GeocoderStatus.OK) {
+        if (results![1] != null) {
+          address = results[1]!.formattedAddress;
+        } else {
+          error = GeoServiceStatus.addressNotFound;
+        }
       } else {
-        return null;
+        error = status;
+        PauloniaErrorService.sendErrorWithoutStacktrace(status);
       }
-    } catch (e, stacktrace) {
-      PauloniaErrorService.sendError(e, stacktrace);
-      return null;
+    });
+    if (error != null) {
+      return Future.error(error);
+    } else {
+      return address;
     }
   }
 
@@ -65,7 +59,7 @@ class GeoService {
       // Location services are not enabled don't continue
       // accessing the position and request users of the
       // App to enable the location services.
-      return Future.error('Location services are disabled.');
+      return Future.error(GeoServiceStatus.locationServiceDisabled);
     }
 
     permission = await Geolocator.checkPermission();
@@ -74,14 +68,13 @@ class GeoService {
       if (permission == LocationPermission.denied) {
         // Permissions are denied, next time you could try
         // requesting permissions again.
-        return Future.error('Location permissions are denied');
+        return Future.error(GeoServiceStatus.locationPermissionDenied);
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, handle appropriately.
-      return Future.error(
-          'Location permissions are permanently denied, we cannot request permissions.');
+      // Permissions are denied forever.
+      return Future.error(GeoServiceStatus.locationPermissionPermanentlyDenied);
     }
 
     // When we reach here, permissions are granted and we can

@@ -3,6 +3,8 @@ import 'package:mi_libro_vecino_api/utils/constants/enums/user_enums.dart';
 import 'package:paulonia_error_service/paulonia_error_service.dart';
 import 'dart:async';
 
+import 'package:paulonia_utils/paulonia_utils.dart';
+
 enum AuthenticationStatus {
   authenticated,
   unauthenticated,
@@ -15,6 +17,9 @@ class AuthService {
   /// Stream of [AuthenticationStatus] which will emit the current
   /// user when the authentication state changes.
   static Stream<AuthenticationStatus> get status {
+    if (PUtils.isOnTest()) {
+      return Stream.value(AuthenticationStatus.unauthenticated);
+    }
     return _auth.authStateChanges().map((firebaseUser) {
       final state = firebaseUser == null
           ? AuthenticationStatus.unauthenticated
@@ -40,6 +45,9 @@ class AuthService {
 
   /// Verify if there is a user session is active
   static bool isLoggedIn() {
+    if (PUtils.isOnTest()) {
+      return false;
+    }
     return _auth.currentUser != null;
   }
 

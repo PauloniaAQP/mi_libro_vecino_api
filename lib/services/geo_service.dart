@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps/google_maps.dart';
 import 'package:http/http.dart' as http;
 import 'package:paulonia_error_service/paulonia_error_service.dart';
+import 'package:paulonia_utils/paulonia_utils.dart';
 
 class GeoService {
   /// Gets the address from the coordinates
@@ -19,6 +20,9 @@ class GeoService {
   /// - If occurs an error while it make the request, the function returns null
   /// and sends the error to PauloniaErrorService
   static Future<String?> getAddress(Coordinates? location) async {
+    if (PUtils.isOnTest()) {
+      return 'Calle falsa 123';
+    }
     if (location == null) {
       return Future.error(GeoServiceStatus.coordinatesNotFound);
     }
@@ -52,6 +56,10 @@ class GeoService {
   static Future<Coordinates> determineCoordinates() async {
     bool serviceEnabled;
     LocationPermission permission;
+
+    if (PUtils.isOnTest()) {
+      return Coordinates(0, 0);
+    }
 
     // Test if location services are enabled.
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -91,6 +99,9 @@ class GeoService {
   /// not if it was denied forever though.
   /// - If permission had been denied forever, the user needs to enable manually,
   static Future<LocationPermission> getPermission() async {
+    if (PUtils.isOnTest()) {
+      return LocationPermission.always;
+    }
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
@@ -111,6 +122,17 @@ class GeoService {
   /// To get more information about the API, see: https://data.opendatasoft.com/
   static Future<UbigeoModel?> getUbigeoFromCoordinates(
       Coordinates? location) async {
+    if (PUtils.isOnTest()) {
+      return UbigeoModel(
+        departmentId: '15',
+        departmentName: 'Lima',
+        provinceId: '01',
+        provinceName: 'Lima',
+        districtId: '01',
+        districtName: 'Lima',
+        type: UbigeoType.district,
+      );
+    }
     if (location == null) {
       return null;
     }

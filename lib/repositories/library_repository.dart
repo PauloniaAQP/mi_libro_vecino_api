@@ -102,8 +102,8 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     if (photo != null) {
       photoVersion++;
 
-      bool response = await ApiUtils.uploadFile(
-          docRef.id, photoVersion, photo, _storageReference);
+      bool response = await ApiUtils.uploadFile(docRef.id, photoVersion, photo,
+          StorageConstants.bigPrefix, _storageReference);
       if (!response) photoVersion--;
     }
     Map<String, dynamic> data = _getLibraryMap(
@@ -160,8 +160,8 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     if (photo != null) {
       photoVersion++;
 
-      bool response = await ApiUtils.uploadFile(
-          docRef.id, photoVersion, photo, _storageReference);
+      bool response = await ApiUtils.uploadFile(docRef.id, photoVersion, photo,
+          StorageConstants.bigPrefix, _storageReference);
       if (!response) photoVersion--;
     }
     Map<String, dynamic> data = _getLibraryMap(
@@ -222,6 +222,19 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     return library;
   }
 
+  /// Gets a library from an id
+  ///
+  /// If [cache] is true but it is not in the repository, it will be added
+  Future<LibraryModel?> getLibraryById(String id, {bool cache = false}) async {
+    if (cache && repositoryMap[id] != null) return repositoryMap[id];
+    DocumentSnapshot? docSnap = await PauloniaDocumentService.getDoc(
+        _collectionReference.doc(id), cache);
+    if (docSnap == null) return null;
+    LibraryModel library = getFromDocSnap(docSnap);
+    addInRepository([library]);
+    return library;
+  }
+
   /// Remove a library from the repository using its id
   Future<void> removeLibrary(String id) async {
     await _collectionReference.doc(id).delete();
@@ -251,7 +264,11 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     Map<String, dynamic> data = {};
     if (photo != null) {
       bool response = await ApiUtils.uploadFile(
-          library.id, library.photoVersion, photo, _storageReference);
+          library.id,
+          library.photoVersion,
+          photo,
+          StorageConstants.bigPrefix,
+          _storageReference);
       if (response) {
         library.photoVersion++;
         library.gsUrl = _getBigGsUrl(library.id, library.photoVersion);

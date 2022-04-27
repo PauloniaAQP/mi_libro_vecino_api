@@ -54,8 +54,8 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
     if (photo != null) {
       photoVersion++;
 
-      bool response = await ApiUtils.uploadFile(
-          userId, photoVersion, photo, _storageReference);
+      bool response = await ApiUtils.uploadFile(userId, photoVersion, photo,
+          StorageConstants.bigPrefix, _storageReference);
       if (!response) photoVersion--;
     }
     Map<String, dynamic> data = _getUserDataMap(
@@ -92,8 +92,8 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
     if (photo != null) {
       photoVersion++;
 
-      bool response = await ApiUtils.uploadFile(
-          userId, photoVersion, photo, _storageReference);
+      bool response = await ApiUtils.uploadFile(userId, photoVersion, photo,
+          StorageConstants.bigPrefix, _storageReference);
       if (!response) photoVersion--;
     }
     Map<String, dynamic> data = _getUserDataMap(
@@ -135,8 +135,8 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
     Map<String, dynamic> data = {};
     if (photo != null) {
       user.photoVersion++;
-      bool response = await ApiUtils.uploadFile(
-          user.id, user.photoVersion, photo, _storageReference);
+      bool response = await ApiUtils.uploadFile(user.id, user.photoVersion,
+          photo, StorageConstants.bigPrefix, _storageReference);
       if (!response) user.photoVersion--;
       data[UserCollectionNames.photoVersion] = user.photoVersion;
       user.gsUrl = _getBigGsUrl(user.id, user.photoVersion);

@@ -82,15 +82,34 @@ class UbigeoService {
 
   /// Gets the department name by the [code] of ubigeo.
   /// Returns null if the [code] is not found.
-  String? getDepartmentNameByCode(code) => _departments[code]?.departmentName;
+  String? getDepartmentNameByCode(String code) =>
+      _departments[code]?.departmentName;
 
   /// Gets the province name by the [code] of ubigeo.
   /// Returns null if the [code] is not found.
-  String? getProvinceNameByCode(code) => _provinces[code]?.provinceName;
+  String? getProvinceNameByCode(String code) => _provinces[code]?.provinceName;
 
   /// Gets the district name by the [code] of ubigeo.
   /// Returns null if the [code] is not found.
-  String? getDistrictNameByCode(code) => _districts[code]?.districtName;
+  String? getDistrictNameByCode(String code) => _districts[code]?.districtName;
+
+  /// Gets the ubigeo model by the name of place.
+  ///
+  /// In order to avoid repetitions, we use hash maps to store the ubigeos.
+  List<UbigeoModel> searchUbigeo(String searchKey) {
+    searchKey = searchKey.toLowerCase();
+    HashMap<String, UbigeoModel> searchResults = HashMap();
+    _districts.forEach((key, value) {
+      if (value.districtName!.toLowerCase().contains(searchKey)) {
+        searchResults[key] = value;
+      } else if (value.provinceName!.toLowerCase().contains(searchKey)) {
+        searchResults[value.provinceId!] = _provinces[value.provinceId]!;
+      } else if (value.departmentName.toLowerCase().contains(searchKey)) {
+        searchResults[value.departmentId] = _departments[value.departmentId]!;
+      }
+    });
+    return searchResults.values.toList();
+  }
 
   late HashMap<String, UbigeoModel> _districts;
   late HashMap<String, UbigeoModel> _provinces;

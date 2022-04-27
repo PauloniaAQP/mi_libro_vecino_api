@@ -24,7 +24,10 @@ class ApiUtils {
 
   /// Convert TimeOfDay to String
   static String timeOfDayToString(TimeOfDay time) {
-    return '${time.hour}:${time.minute}';
+    String sufix = time.hour < 12 ? 'AM' : 'PM';
+    String minutes = time.minute < 10 ? '0${time.minute}' : '${time.minute}';
+    String hour = time.hour < 10 ? '0${time.hour}' : '${time.hour}';
+    return '$hour:$minutes $sufix';
   }
 
   /// Parse String to TimeOfDay
@@ -40,23 +43,24 @@ class ApiUtils {
     String id,
     int photoVersion,
     XFile image,
+    String photoName,
     Reference reference, {
     bool delAns = false,
   }) async {
-    String prefix = id + '_';
+    String prefix = photoName;
     Uint8List img = await image.readAsBytes();
     try {
       if (delAns) {
         await reference
             .child(id)
             .child(
-                prefix + "${photoVersion - 1}" + StorageConstants.pngExtension)
+                prefix + "${photoVersion - 1}" + StorageConstants.jpgExtension)
             .delete();
       }
       await reference
           .child(id)
           .child(
-              prefix + photoVersion.toString() + StorageConstants.pngExtension)
+              prefix + photoVersion.toString() + StorageConstants.jpgExtension)
           .putData(
               img,
               SettableMetadata(
@@ -75,6 +79,16 @@ class ApiUtils {
     word = word.trim();
     word = removeDiacritics(word);
     return word.split(' ');
+  }
+
+  static Coordinates? getCenterFromCoordinates(List<Coordinates> coordinates) {
+    if (coordinates.isEmpty) return null;
+    double x = 0, y = 0;
+    for (var i = 0; i < coordinates.length; i++) {
+      x += coordinates[i].latitude;
+      y += coordinates[i].longitude;
+    }
+    return Coordinates(x / coordinates.length, y / coordinates.length);
   }
 }
 

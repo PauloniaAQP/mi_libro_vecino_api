@@ -69,12 +69,7 @@ class AuthService {
         password: password,
       ))
           .user;
-      await user?.updateProfile(
-        displayName: name,
-      );
-      await user?.reload();
       user = _auth.currentUser;
-      user?.sendEmailVerification();
       return user;
     } catch (error) {
       throw (_handlerLoginError(error));

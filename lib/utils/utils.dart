@@ -33,6 +33,7 @@ class ApiUtils {
   /// Parse String to TimeOfDay
   /// String must be like '00:00'
   static TimeOfDay timeOfDayFromString(String time) {
+    time = time.substring(0, 5);
     int hour = int.parse(time.split(':')[0]);
     int minute = int.parse(time.split(':')[1]);
     return TimeOfDay(hour: hour, minute: minute);

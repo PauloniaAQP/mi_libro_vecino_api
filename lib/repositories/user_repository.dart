@@ -33,7 +33,7 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
       name: docSnap.get(UserCollectionNames.name),
       phone: docSnap.data()?[UserCollectionNames.phone],
       email: docSnap.get(UserCollectionNames.email),
-      created: docSnap.get(UserCollectionNames.created).toDate(),
+      created: docSnap.get(UserCollectionNames.created)?.toDate(),
       firebaseUser: user,
       gsUrl: _getBigGsUrl(docSnap.id, photoVersion),
     );

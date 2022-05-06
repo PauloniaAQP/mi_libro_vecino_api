@@ -8,7 +8,7 @@ abstract class StorageConstants {
   static const smallPrefix = 'small_';
   static const bigPrefix = 'big_';
   static const defaultUserProfile = 'default_profile';
-  static const defaultLibraryProfile = 'default_client';
+  static const defaultLibraryProfile = 'default_library';
   static const defaultDirectoryName = 'default';
 
   static const jpgExtension = '.jpg';

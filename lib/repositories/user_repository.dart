@@ -24,6 +24,8 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
       .child(StorageConstants.userDirectoryName);
 
   /// Get a User model from a document snapshot
+  /// Sometimes the timestamp is not set, so we need to check for it
+  /// For these cases, we use the default value (DateTime.now())
   @override
   UserModel getFromDocSnap(DocumentSnapshot docSnap, {User? user}) {
     int photoVersion = docSnap.data()?[UserCollectionNames.photoVersion] ?? -1;
@@ -33,7 +35,8 @@ class UserRepository extends PauloniaRepository<String, UserModel> {
       name: docSnap.get(UserCollectionNames.name),
       phone: docSnap.data()?[UserCollectionNames.phone],
       email: docSnap.get(UserCollectionNames.email),
-      created: docSnap.get(UserCollectionNames.created).toDate(),
+      created:
+          docSnap.get(UserCollectionNames.created)?.toDate() ?? DateTime.now(),
       firebaseUser: user,
       gsUrl: _getBigGsUrl(docSnap.id, photoVersion),
     );

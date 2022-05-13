@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:mi_libro_vecino_api/api_configuration.dart';
 import 'package:mi_libro_vecino_api/models/library_model.dart';
+import 'package:mi_libro_vecino_api/services/auth_service.dart';
 import 'package:mi_libro_vecino_api/utils/constants/enums/library_enums.dart';
 import 'package:mi_libro_vecino_api/utils/constants/enums/ubigeo_enums.dart';
 import 'package:mi_libro_vecino_api/utils/constants/firestore/collections/library.dart';
@@ -260,6 +261,7 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     String? districtId,
     String? website,
     String? description,
+    LibraryState? state,
   }) async {
     Map<String, dynamic> data = {};
     if (photo != null) {
@@ -337,6 +339,10 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
       library.description = description;
       data[LibraryCollectionNames.description] = description;
     }
+    if (state != null) {
+      library.state = state;
+      data[LibraryCollectionNames.state] = state.index;
+    }
     _collectionReference.doc(library.id).update(data);
     addInRepository([library]);
     return library;
@@ -409,6 +415,21 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
       List<LibraryModel> libraries = await getFromDocSnapList(query.docs);
       addInRepository(libraries);
       yield libraries;
+    }
+  }
+
+  /// Accept a library, only admin can call this function
+  Future<bool> acceptLibrary(String id) async {
+    final user = AuthService.currentUser;
+    if (user == null) return false;
+    final isAdmin = await AuthService.isAdmin(user);
+    if (isAdmin == true) {
+      final library = await getFromId(id);
+      if (library == null) return false;
+      updateLibrary(library, state: LibraryState.accepted);
+      return true;
+    } else {
+      return false;
     }
   }
 

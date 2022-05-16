@@ -26,16 +26,19 @@ class ApiUtils {
   static String timeOfDayToString(TimeOfDay time) {
     String sufix = time.hour < 12 ? 'AM' : 'PM';
     String minutes = time.minute < 10 ? '0${time.minute}' : '${time.minute}';
-    String hour = time.hour < 10 ? '0${time.hour}' : '${time.hour}';
+    int tempHour = time.hour;
+    if (time.hour > 12) tempHour -= 12;
+    String hour = time.hour < 10 ? '0$tempHour' : '$tempHour';
     return '$hour:$minutes $sufix';
   }
 
   /// Parse String to TimeOfDay
   /// String must be like '00:00'
   static TimeOfDay timeOfDayFromString(String time) {
-    time = time.substring(0, 5);
-    int hour = int.parse(time.split(':')[0]);
-    int minute = int.parse(time.split(':')[1]);
+    final subTime = time.substring(0, 5);
+    int hour = int.parse(subTime.split(':')[0]);
+    int minute = int.parse(subTime.split(':')[1]);
+    if (time.contains('PM')) hour += 12;
     return TimeOfDay(hour: hour, minute: minute);
   }
 

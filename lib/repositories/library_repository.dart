@@ -57,7 +57,8 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
         List.from(docSnap.get(LibraryCollectionNames.searchKeys));
     return LibraryModel(
       id: docSnap.id,
-      created: docSnap.get(LibraryCollectionNames.created).toDate(),
+      created: docSnap.get(LibraryCollectionNames.created)?.toDate() ??
+          DateTime.now(),
       ownerId: docSnap.get(LibraryCollectionNames.ownerId),
       name: docSnap.get(LibraryCollectionNames.name),
       openingHour: openingHour,

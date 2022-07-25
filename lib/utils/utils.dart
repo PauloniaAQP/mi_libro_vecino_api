@@ -117,4 +117,15 @@ class Coordinates {
   GeoPoint toGeoPoint() {
     return GeoPoint(latitude, longitude);
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Coordinates &&
+          runtimeType == other.runtimeType &&
+          latitude == other.latitude &&
+          longitude == other.longitude;
+
+  @override
+  int get hashCode => latitude.hashCode;
 }

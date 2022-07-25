@@ -57,7 +57,8 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
         List.from(docSnap.get(LibraryCollectionNames.searchKeys));
     return LibraryModel(
       id: docSnap.id,
-      created: docSnap.get(LibraryCollectionNames.created).toDate(),
+      created: docSnap.get(LibraryCollectionNames.created)?.toDate() ??
+          DateTime.now(),
       ownerId: docSnap.get(LibraryCollectionNames.ownerId),
       name: docSnap.get(LibraryCollectionNames.name),
       openingHour: openingHour,
@@ -494,6 +495,7 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
     if (resetPagination) {
       _librariesByUbigeoPagination[type] = null;
     }
+
     switch (type) {
       case UbigeoType.department:
         query = _collectionReference.where(LibraryCollectionNames.departmentId,
@@ -508,6 +510,8 @@ class LibraryRepository extends PauloniaRepository<String, LibraryModel> {
             isEqualTo: ubigeoCode);
         break;
     }
+    query = query.where(LibraryCollectionNames.state,
+        isEqualTo: LibraryState.accepted.index);
     query = query.orderBy(LibraryCollectionNames.name);
     query = query.limit(limit);
     if (_librariesByUbigeoPagination[type] != null) {
